@@ -35,9 +35,28 @@
 6.  **导入/导出进度**:
     - 使用“我的单词列表”旁边的导入/导出按钮来保存或加载你的学习进度。
 
+## 部署到 Vercel
+
+本项目支持一键部署到 Vercel，以便使用官方提供的 Gemini API 中转服务。
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Ffaithleysath%2FYAVA)
+
+### 部署步骤
+
+1.  **Fork 本仓库** (可选，如果使用上面的按钮则会自动完成)。
+2.  点击上面的 "Deploy with Vercel" 按钮。
+3.  Vercel 会提示你创建一个新的项目。
+4.  在 "Configure Project" 页面，展开 "Environment Variables" 部分。
+5.  添加以下两个环境变量：
+    - `GEMINI_API_KEY`: 你的 Google AI Studio API Key。
+    - `GEMINI_MODEL_NAME` (可选): 你想使用的模型名称，默认为 `gemini-1.5-flash-latest`。
+6.  点击 "Deploy"，等待部署完成即可。
+
+部署成功后，你就可以在自己的 Vercel 域名下使用该应用，无需在前端设置中填写 Gemini 的 API Key。
+
 ## 🛠️ 技术架构
 
-该项目完全基于前端技术，无需后端服务器。
+该项目主要基于前端技术，并包含一个 Vercel Edge Function 作为 API 代理。
 
 - **HTML**: 负责页面结构。
 - **Tailwind CSS**: 用于快速构建 UI 布局和基础样式。
@@ -51,6 +70,7 @@
     - `learning.js`: 学习模式的逻辑。
     - `testing.js`: 测试模式的逻辑。
     - `settings.js`: API 设置模态框的逻辑。
+- **Vercel Edge Function**: 在 `api/index.js` 中实现了一个 API 代理，用于将前端请求安全地转发给 Gemini API，并通过流式响应避免超时。
 
 ## 📄 文件格式
 
