@@ -77,15 +77,13 @@ export function applyPreset(presetName) {
         baseUrlInput.value = presets[presetName].baseUrl;
         modelNameInput.value = presets[presetName].modelName;
         
-        // 对于Gemini相关预设，只锁定Base URL，允许用户修改模型
-        if (presetName === 'gemini-proxy' || presetName === 'gemini') {
-            baseUrlInput.disabled = true;
-            modelNameInput.disabled = false; // 允许修改模型
-            modelNameInput.focus(); // 聚焦到模型输入框
-        } else {
-            // After setting values, let updatePresetButtons sync the UI.
-            updatePresetButtons();
-        }
+        // 所有预设都只锁定Base URL，允许用户自定义模型名称
+        baseUrlInput.disabled = true;
+        modelNameInput.disabled = false;
+        modelNameInput.focus();
+        
+        // 更新按钮状态
+        updatePresetButtons();
     }
 }
 
@@ -109,41 +107,30 @@ function updatePresetButtons() {
     deepseekBtn.className = `${baseClasses} ${inactiveClass}`;
     customBtn.className = `${baseClasses} ${inactiveClass}`;
 
-    let isPresetMatch = false;
-    let isGeminiWithCustomModel = false;
+    let matchedPreset = false;
     
+    // 检查是否匹配预设的 Base URL
     if (currentBaseUrl === presets.gemini.baseUrl) {
-        if (currentModelName === presets.gemini.modelName) {
-            // 标准Gemini预设
-            geminiBtn.className = `${baseClasses} ${activeClass}`;
-            isPresetMatch = true;
-        } else {
-            // Gemini直连但使用自定义模型
-            isGeminiWithCustomModel = true;
-        }
-    } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl) {
-        if (currentModelName === presets['gemini-proxy'].modelName) {
-            // 标准中转预设
-            if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
-            isPresetMatch = true;
-        } else {
-            // 中转服务但使用自定义模型
-            isGeminiWithCustomModel = true;
-        }
-    } else if (currentBaseUrl === presets.deepseek.baseUrl && currentModelName === presets.deepseek.modelName) {
-        deepseekBtn.className = `${baseClasses} ${activeClass}`;
-        isPresetMatch = true;
-    }
-
-    if (isPresetMatch) {
-        baseUrlInput.disabled = true;
-        modelNameInput.disabled = true;
-    } else if (isGeminiWithCustomModel) {
-        // Gemini服务 + 自定义模型：锁定Base URL，允许修改模型
-        customBtn.className = `${baseClasses} ${activeClass}`;
+        // Gemini 直连
+        geminiBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
-    } else {
+        matchedPreset = true;
+    } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl) {
+        // Gemini 中转
+        if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
+        baseUrlInput.disabled = true;
+        modelNameInput.disabled = false;
+        matchedPreset = true;
+    } else if (currentBaseUrl === presets.deepseek.baseUrl) {
+        // DeepSeek
+        deepseekBtn.className = `${baseClasses} ${activeClass}`;
+        baseUrlInput.disabled = true;
+        modelNameInput.disabled = false;
+        matchedPreset = true;
+    }
+    
+    if (!matchedPreset) {
         // 完全自定义
         customBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = false;
