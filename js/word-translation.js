@@ -22,10 +22,6 @@ export function initWordTranslation() {
     // 监听键盘事件，ESC键关闭悬浮框
     document.addEventListener('keydown', handleKeyDown);
     
-    // 监听滚动事件，让悬浮框跟随滚动
-    document.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
-    
     console.log('划词翻译功能已初始化');
 }
 
@@ -313,88 +309,6 @@ function handleDocumentClick(event) {
 // 处理键盘事件
 function handleKeyDown(event) {
     if (event.key === 'Escape' && translationState.tooltipVisible) {
-        hideTooltip();
-    }
-}
-
-// 处理滚动事件
-function handleScroll(event) {
-    if (translationState.currentTooltip && translationState.tooltipVisible) {
-        // 更新悬浮框位置以跟随滚动
-        updateTooltipPosition();
-    }
-}
-
-// 处理窗口大小变化事件
-function handleResize(event) {
-    if (translationState.currentTooltip && translationState.tooltipVisible) {
-        // 窗口大小变化时重新计算位置
-        updateTooltipPosition();
-    }
-}
-
-// 更新悬浮框位置
-function updateTooltipPosition() {
-    if (!translationState.currentTooltip || !translationState.tooltipVisible) {
-        return;
-    }
-    
-    const tooltip = translationState.currentTooltip;
-    const selection = window.getSelection();
-    
-    if (selection.rangeCount === 0) {
-        // 如果没有选中文本，隐藏悬浮框
-        hideTooltip();
-        return;
-    }
-    
-    try {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        
-        // 如果选中的文本不在可视区域内，隐藏悬浮框
-        if (rect.bottom < 0 || rect.top > window.innerHeight || 
-            rect.right < 0 || rect.left > window.innerWidth) {
-            hideTooltip();
-            return;
-        }
-        
-        // 计算新位置
-        const tooltipRect = tooltip.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        let x = rect.left + scrollX + (rect.width / 2) - (tooltipRect.width / 2);
-        let y = rect.top + scrollY - tooltipRect.height - 10;
-        
-        // 水平边界检测
-        const viewportWidth = window.innerWidth;
-        if (x + tooltipRect.width > viewportWidth + scrollX) {
-            x = viewportWidth + scrollX - tooltipRect.width - 10;
-        }
-        if (x < scrollX + 10) {
-            x = scrollX + 10;
-        }
-        
-        // 垂直边界检测
-        if (y < scrollY + 10) {
-            // 如果上方空间不够，显示在选中文本下方
-            y = rect.bottom + scrollY + 10;
-        }
-        
-        // 平滑更新位置
-        tooltip.style.transition = 'left 0.2s ease, top 0.2s ease';
-        tooltip.style.left = `${x}px`;
-        tooltip.style.top = `${y}px`;
-        
-        // 清除过渡效果，避免影响后续位置更新
-        setTimeout(() => {
-            tooltip.style.transition = '';
-        }, 200);
-        
-    } catch (error) {
-        console.error('更新悬浮框位置时出错:', error);
-        // 出错时隐藏悬浮框
         hideTooltip();
     }
 }
