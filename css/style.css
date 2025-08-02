@@ -231,3 +231,168 @@ body {
                 padding: 1rem;
             }
         }
+
+        /* 划词翻译悬浮框样式 */
+        .word-tooltip {
+            position: fixed;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            max-width: 320px;
+            min-width: 280px;
+            z-index: 1001;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Noto Sans SC', sans-serif;
+            user-select: none;
+            pointer-events: auto;
+        }
+
+        .word-tooltip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .word-tooltip-word {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: 0.5px;
+        }
+
+        .word-tooltip-close {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 18px;
+            line-height: 1;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .word-tooltip-close:hover {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        .word-tooltip-content {
+            color: #334155;
+        }
+
+        .word-tooltip-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .word-tooltip-section {
+            margin: 0;
+        }
+
+        .word-tooltip-label {
+            font-weight: 600;
+            color: #475569;
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .word-tooltip-text {
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .word-tooltip-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .word-tooltip-error {
+            padding: 16px 0;
+            text-align: center;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 640px) {
+            .word-tooltip {
+                max-width: calc(100vw - 20px);
+                min-width: 260px;
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .word-tooltip-word {
+                font-size: 16px;
+            }
+
+            .word-tooltip-sections {
+                gap: 10px;
+            }
+
+            .word-tooltip-label {
+                font-size: 11px;
+            }
+
+            .word-tooltip-text {
+                font-size: 12px;
+            }
+        }
+
+        /* 防止文本选择时的样式冲突 */
+        .word-tooltip * {
+            user-select: none;
+        }
+
+        /* 悬浮框内的特殊样式 */
+        .word-tooltip .italic {
+            font-style: italic;
+        }
+
+        .word-tooltip .text-blue-600 {
+            color: #2563eb;
+        }
+
+        .word-tooltip .text-red-500 {
+            color: #ef4444;
+        }
+
+        .word-tooltip .text-slate-500 {
+            color: #64748b;
+        }
+
+        .word-tooltip .ml-2 {
+            margin-left: 0.5rem;
+        }
+
+        .word-tooltip .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .word-tooltip .flex {
+            display: flex;
+        }
+
+        .word-tooltip .items-center {
+            align-items: center;
+        }
+
+        .word-tooltip .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }

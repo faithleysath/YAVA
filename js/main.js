@@ -5,6 +5,7 @@ import { startTest, submitTestAnswer, nextTestQuestion } from './testing.js';
 import { openSettingsModal, closeSettingsModal, saveSettings, loadSettings, applyPreset } from './settings.js';
 import { checkVersionUpdate, showChangelogManually } from './version.js';
 import { loadWordlistsIndex, renderWordlistCard } from './wordlist-manager.js';
+import { initWordTranslation } from './word-translation.js';
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -21,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 初始化词表显示
     await initializeWordlists();
+
+    // 初始化划词翻译功能
+    initWordTranslation();
 
     // Event Listeners
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
