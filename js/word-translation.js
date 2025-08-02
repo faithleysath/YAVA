@@ -7,8 +7,7 @@ const translationState = {
     isTranslating: false,
     translationCache: new Map(),
     tooltipVisible: false,
-    debounceTimer: null,
-    positionTracker: null // 用于追踪选中文字位置的元素
+    debounceTimer: null
 };
 
 // 初始化划词翻译功能
@@ -23,7 +22,9 @@ export function initWordTranslation() {
     // 监听键盘事件，ESC键关闭悬浮框
     document.addEventListener('keydown', handleKeyDown);
     
-    // 监听窗口大小变化事件
+    // 监听滚动事件，让悬浮框跟随滚动
+    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleResize);
     
     console.log('划词翻译功能已初始化');
@@ -67,17 +68,16 @@ async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
     
-    // 创建位置追踪元素
-    createPositionTracker();
-    
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
     document.body.appendChild(tooltip);
     translationState.currentTooltip = tooltip;
     translationState.tooltipVisible = true;
     
-    // 初始位置设置
-    updateTooltipPosition();
+    // 计算并设置位置
+    const position = calculateTooltipPosition(event, tooltip);
+    tooltip.style.left = `${position.x}px`;
+    tooltip.style.top = `${position.y}px`;
     
     // 显示加载状态
     showLoadingState(tooltip);
@@ -130,43 +130,35 @@ function createTooltipElement(word) {
     return tooltip;
 }
 
-// 创建位置追踪元素
-function createPositionTracker() {
-    // 清除之前的追踪元素
-    if (translationState.positionTracker) {
-        translationState.positionTracker.remove();
+// 计算悬浮框位置
+function calculateTooltipPosition(event, tooltipElement) {
+    const rect = tooltipElement.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    
+    let x = event.pageX || (event.clientX + scrollX);
+    let y = event.pageY || (event.clientY + scrollY);
+    
+    // 默认显示在鼠标上方
+    y = y - rect.height - 10;
+    
+    // 水平边界检测
+    if (x + rect.width > viewportWidth + scrollX) {
+        x = viewportWidth + scrollX - rect.width - 10;
+    }
+    if (x < scrollX + 10) {
+        x = scrollX + 10;
     }
     
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) {
-        return;
+    // 垂直边界检测
+    if (y < scrollY + 10) {
+        // 如果上方空间不够，显示在鼠标下方
+        y = (event.pageY || (event.clientY + scrollY)) + 10;
     }
     
-    try {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        
-        // 创建一个不可见的追踪元素，插入到选中文本的位置
-        const tracker = document.createElement('span');
-        tracker.style.cssText = `
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
-        `;
-        
-        // 将追踪元素插入到选中文本的开始位置
-        const clonedRange = range.cloneRange();
-        clonedRange.collapse(true); // 折叠到开始位置
-        clonedRange.insertNode(tracker);
-        
-        translationState.positionTracker = tracker;
-        
-    } catch (error) {
-        console.error('创建位置追踪元素失败:', error);
-    }
+    return { x, y };
 }
 
 // 显示加载状态
@@ -308,18 +300,6 @@ function hideTooltip() {
         translationState.currentTooltip = null;
         translationState.tooltipVisible = false;
     }
-    
-    // 清理位置追踪元素
-    if (translationState.positionTracker) {
-        try {
-            if (translationState.positionTracker.parentNode) {
-                translationState.positionTracker.parentNode.removeChild(translationState.positionTracker);
-            }
-        } catch (error) {
-            console.error('清理位置追踪元素失败:', error);
-        }
-        translationState.positionTracker = null;
-    }
 }
 
 // 处理文档点击事件
@@ -337,6 +317,13 @@ function handleKeyDown(event) {
     }
 }
 
+// 处理滚动事件
+function handleScroll(event) {
+    if (translationState.currentTooltip && translationState.tooltipVisible) {
+        // 更新悬浮框位置以跟随滚动
+        updateTooltipPosition();
+    }
+}
 
 // 处理窗口大小变化事件
 function handleResize(event) {
@@ -353,43 +340,8 @@ function updateTooltipPosition() {
     }
     
     const tooltip = translationState.currentTooltip;
-    
-    // 优先使用位置追踪元素
-    if (translationState.positionTracker && translationState.positionTracker.parentNode) {
-        try {
-            const trackerRect = translationState.positionTracker.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
-            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-            
-            // 基于追踪元素的位置计算悬浮框位置
-            let x = trackerRect.left + scrollX - (tooltipRect.width / 2);
-            let y = trackerRect.top + scrollY - tooltipRect.height - 10;
-            
-            // 简单的边界检测
-            if (x < scrollX + 10) {
-                x = scrollX + 10;
-            }
-            if (x + tooltipRect.width > window.innerWidth + scrollX - 10) {
-                x = window.innerWidth + scrollX - tooltipRect.width - 10;
-            }
-            if (y < scrollY + 10) {
-                y = trackerRect.bottom + scrollY + 10;
-            }
-            
-            // 平滑更新位置
-            tooltip.style.transition = 'left 0.1s ease, top 0.1s ease';
-            tooltip.style.left = `${x}px`;
-            tooltip.style.top = `${y}px`;
-            
-            return;
-        } catch (error) {
-            console.error('使用位置追踪元素更新位置失败:', error);
-        }
-    }
-    
-    // 备用方案：使用选中文本的范围
     const selection = window.getSelection();
+    
     if (selection.rangeCount === 0) {
         return;
     }
@@ -397,12 +349,15 @@ function updateTooltipPosition() {
     try {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
+        
+        // 计算新位置 - 简单地跟随选中文本
         const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
         const scrollY = window.pageYOffset || document.documentElement.scrollTop;
         
-        let x = rect.left + scrollX + (rect.width / 2) - 140;
-        let y = rect.top + scrollY - 120;
+        let x = rect.left + scrollX + (rect.width / 2) - 140; // 140是悬浮框宽度的一半估值
+        let y = rect.top + scrollY - 120; // 120是悬浮框高度的估值
         
+        // 平滑更新位置
         tooltip.style.transition = 'left 0.1s ease, top 0.1s ease';
         tooltip.style.left = `${x}px`;
         tooltip.style.top = `${y}px`;
