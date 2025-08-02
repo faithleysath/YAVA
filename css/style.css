@@ -251,6 +251,9 @@ body {
         }
 
         .word-tooltip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #f1f5f9;
@@ -261,6 +264,28 @@ body {
             font-weight: 700;
             color: #1e293b;
             letter-spacing: 0.5px;
+        }
+
+        .word-tooltip-close {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 18px;
+            line-height: 1;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .word-tooltip-close:hover {
+            background-color: #f1f5f9;
+            color: #475569;
         }
 
         .word-tooltip-content {
