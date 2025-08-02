@@ -6,6 +6,7 @@ import { openSettingsModal, closeSettingsModal, saveSettings, loadSettings, appl
 import { checkVersionUpdate, showChangelogManually } from './version.js';
 import { loadWordlistsIndex, renderWordlistCard } from './wordlist-manager.js';
 import { initWordTranslation } from './word-translation.js';
+import { loadVocabularyBook, removeWordFromVocab, loadVocabAsWordlist } from './vocabulary-book.js';
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -25,6 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 初始化划词翻译功能
     initWordTranslation();
+
+    // 初始化生词本
+    loadVocabularyBook();
 
     // Event Listeners
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
@@ -88,3 +92,5 @@ window.nextStep = nextStep;
 window.submitTestAnswer = submitTestAnswer;
 window.nextTestQuestion = nextTestQuestion;
 window.showChangelogManually = showChangelogManually;
+window.removeWordFromVocab = removeWordFromVocab;
+window.loadVocabAsWordlist = loadVocabAsWordlist;

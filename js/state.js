@@ -8,6 +8,7 @@ export const appState = {
     allWords: [],
     headers: [],
     masteryState: {},
+    vocabularyBook: [], // 新增：生词本
     currentWord: null,
     currentMeaningIndex: 0,
     currentView: 'home',

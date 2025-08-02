@@ -407,3 +407,8 @@ body {
         .word-tooltip .space-y-3 > * + * {
             margin-top: 0.75rem;
         }
+
+        /* 生词本样式 */
+        .vocab-item .vocab-delete-btn {
+            transition: opacity 0.2s ease-in-out, background-color 0.2s;
+        }

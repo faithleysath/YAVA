@@ -1,5 +1,6 @@
 import { callLLM } from './api.js';
 import { showToast } from './ui.js';
+import { addWordToVocab } from './vocabulary-book.js';
 
 // 翻译状态管理
 const translationState = {
@@ -502,7 +503,24 @@ function displayTranslationResult(tooltip, result) {
                 </div>
             ` : ''}
         </div>
+        <div class="word-tooltip-footer mt-4 pt-3 border-t border-slate-100">
+            <button id="add-to-vocab-btn" class="w-full bg-blue-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                添加到生词本
+            </button>
+        </div>
     `;
+
+    const addToVocabBtn = tooltip.querySelector('#add-to-vocab-btn');
+    if (addToVocabBtn) {
+        addToVocabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addWordToVocab(result);
+            // 可选：禁用按钮或改变样式表示已添加
+            addToVocabBtn.textContent = '已添加';
+            addToVocabBtn.disabled = true;
+            addToVocabBtn.classList.add('bg-green-600', 'hover:bg-green-600');
+        });
+    }
 }
 
 // 隐藏悬浮框
