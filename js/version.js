@@ -11,19 +11,21 @@ export async function checkVersionUpdate() {
     
     // 如果是新用户或版本有更新
     if (!storedVersion || storedVersion !== APP_VERSION) {
+        const isNewUser = !storedVersion;
+        
         // 更新存储的版本号
         localStorage.setItem(VERSION_STORAGE_KEY, APP_VERSION);
         
-        // 如果不是首次安装且changelog还未显示过
-        if (storedVersion && changelogShown !== APP_VERSION) {
-            await showChangelogModal();
+        // 显示changelog（新用户或版本更新用户）
+        if (changelogShown !== APP_VERSION) {
+            await showChangelogModal(isNewUser);
             localStorage.setItem(CHANGELOG_SHOWN_KEY, APP_VERSION);
         }
     }
 }
 
 // 显示changelog模态框
-async function showChangelogModal() {
+async function showChangelogModal(isNewUser = false) {
     try {
         // 获取changelog索引
         const indexResponse = await fetch('/changelog/index.json');
@@ -50,7 +52,7 @@ async function showChangelogModal() {
         const changelogContent = await changelogResponse.text();
         
         // 创建并显示模态框
-        createChangelogModal(currentVersionInfo, changelogContent);
+        createChangelogModal(currentVersionInfo, changelogContent, isNewUser);
         
     } catch (error) {
         console.error('加载changelog时出错:', error);
@@ -58,7 +60,12 @@ async function showChangelogModal() {
 }
 
 // 创建changelog模态框
-function createChangelogModal(versionInfo, content) {
+function createChangelogModal(versionInfo, content, isNewUser = false) {
+    const title = isNewUser ? '👋 欢迎使用 AI 智能单词陪练' : '🎉 应用已更新';
+    const subtitle = isNewUser 
+        ? `当前版本: v${versionInfo.version} - ${versionInfo.title}`
+        : `${versionInfo.title} - v${versionInfo.version}`;
+    
     // 创建模态框HTML
     const modalHTML = `
         <div id="changelog-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -66,8 +73,8 @@ function createChangelogModal(versionInfo, content) {
                 <div class="p-6 border-b border-slate-200">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-900">🎉 应用已更新</h2>
-                            <p class="text-slate-600 mt-1">${versionInfo.title} - v${versionInfo.version}</p>
+                            <h2 class="text-2xl font-bold text-slate-900">${title}</h2>
+                            <p class="text-slate-600 mt-1">${subtitle}</p>
                         </div>
                         <button onclick="closeChangelogModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -78,6 +85,16 @@ function createChangelogModal(versionInfo, content) {
                     </div>
                 </div>
                 <div class="p-6 overflow-y-auto max-h-[60vh]">
+                    ${isNewUser ? `
+                    <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">🚀 快速开始</h3>
+                        <p class="text-blue-800 text-sm">
+                            1. 点击右上角设置按钮配置 API<br>
+                            2. 拖拽上传 CSV 单词文件或下载模板<br>
+                            3. 开始你的智能单词学习之旅！
+                        </p>
+                    </div>
+                    ` : ''}
                     <div id="changelog-content" class="prose prose-slate max-w-none">
                         ${formatChangelogContent(content)}
                     </div>
@@ -85,7 +102,7 @@ function createChangelogModal(versionInfo, content) {
                 <div class="p-6 border-t border-slate-200 bg-slate-50">
                     <div class="flex justify-end gap-3">
                         <button onclick="closeChangelogModal()" class="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                            知道了
+                            ${isNewUser ? '开始使用' : '知道了'}
                         </button>
                     </div>
                 </div>
