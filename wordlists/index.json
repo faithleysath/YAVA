@@ -1,48 +1,18 @@
 {
   "wordlists": [
     {
-      "id": "cet4_core",
-      "name": "大学英语四级核心词汇",
-      "description": "精选四级考试最核心的高频词汇，适合快速突破",
-      "filename": "cet4_core.csv",
-      "wordCount": 10,
-      "difficulty": "初级",
-      "tags": ["四级", "核心", "高频"],
-      "createdAt": "2025-01-02",
-      "updatedAt": "2025-01-02"
-    },
-    {
-      "id": "cet6_advanced",
-      "name": "大学英语六级进阶词汇",
-      "description": "六级考试进阶词汇，提升词汇量的必备选择",
-      "filename": "cet6_advanced.csv",
-      "wordCount": 800,
-      "difficulty": "中级",
-      "tags": ["六级", "进阶", "提升"],
-      "createdAt": "2025-01-02",
-      "updatedAt": "2025-01-02"
-    },
-    {
-      "id": "toefl_essential",
-      "name": "托福考试必备词汇",
-      "description": "托福考试核心词汇，覆盖听说读写各个部分",
-      "filename": "toefl_essential.csv",
-      "wordCount": 1200,
+      "id": "redbook_u12",
+      "name": "【红宝书】Unit12",
+      "description": "7.31日单词任务",
+      "filename": "redbook_u12.csv",
+      "wordCount": 83,
       "difficulty": "中高级",
-      "tags": ["托福", "出国", "必备"],
-      "createdAt": "2025-01-02",
-      "updatedAt": "2025-01-02"
-    },
-    {
-      "id": "gre_vocabulary",
-      "name": "GRE词汇精选",
-      "description": "GRE考试高频词汇，助力研究生申请",
-      "filename": "gre_vocabulary.csv",
-      "wordCount": 1500,
-      "difficulty": "高级",
-      "tags": ["GRE", "研究生", "高难度"],
-      "createdAt": "2025-01-02",
-      "updatedAt": "2025-01-02"
+      "tags": [
+        "考研",
+        "红宝书"
+      ],
+      "createdAt": "2025-08-02",
+      "updatedAt": "2025-08-02"
     }
   ]
 }
