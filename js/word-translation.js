@@ -7,7 +7,10 @@ const translationState = {
     isTranslating: false,
     translationCache: new Map(),
     tooltipVisible: false,
-    debounceTimer: null
+    debounceTimer: null,
+    lastSelectionRect: null, // 保存最后一次选中文本的位置
+    resizeTimer: null,
+    scrollTimer: null
 };
 
 // 初始化划词翻译功能
@@ -21,6 +24,12 @@ export function initWordTranslation() {
     
     // 监听键盘事件，ESC键关闭悬浮框
     document.addEventListener('keydown', handleKeyDown);
+    
+    // 监听窗口大小变化，重新定位悬浮框
+    window.addEventListener('resize', handleWindowResize);
+    
+    // 监听页面滚动，重新定位悬浮框
+    window.addEventListener('scroll', handleWindowScroll);
     
     console.log('划词翻译功能已初始化');
 }
@@ -63,19 +72,35 @@ async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
     
+    // 获取选中文本的位置信息
+    const selectionRect = getSelectionPosition();
+    if (!selectionRect) {
+        console.warn('无法获取选中文本位置');
+        return;
+    }
+    
+    // 保存选中文本位置，用于窗口变化时重新定位
+    translationState.lastSelectionRect = selectionRect;
+    
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
+    
+    // 先设置为不可见，避免闪烁
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.position = 'absolute';
+    
     document.body.appendChild(tooltip);
     translationState.currentTooltip = tooltip;
     translationState.tooltipVisible = true;
     
-    // 计算并设置位置
-    const position = calculateTooltipPosition(event, tooltip);
-    tooltip.style.left = `${position.x}px`;
-    tooltip.style.top = `${position.y}px`;
-    
     // 显示加载状态
     showLoadingState(tooltip);
+    
+    // 等待DOM渲染完成后再定位
+    requestAnimationFrame(() => {
+        positionTooltip(tooltip, selectionRect);
+        tooltip.style.visibility = 'visible';
+    });
     
     // 获取翻译结果
     try {
@@ -84,11 +109,21 @@ async function showTranslationTooltip(word, event) {
         
         if (translationResult && translationState.tooltipVisible) {
             displayTranslationResult(tooltip, translationResult);
+            
+            // 内容更新后重新定位
+            requestAnimationFrame(() => {
+                positionTooltip(tooltip, selectionRect);
+            });
         }
     } catch (error) {
         console.error('翻译失败:', error);
         if (translationState.tooltipVisible) {
             showErrorState(tooltip, '翻译失败，请稍后重试');
+            
+            // 错误状态显示后重新定位
+            requestAnimationFrame(() => {
+                positionTooltip(tooltip, selectionRect);
+            });
         }
     } finally {
         translationState.isTranslating = false;
@@ -125,8 +160,157 @@ function createTooltipElement(word) {
     return tooltip;
 }
 
-// 计算悬浮框位置
+// 获取选中文本的位置信息
+function getSelectionPosition() {
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) {
+        return null;
+    }
+    
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    
+    return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+        centerX: rect.left + rect.width / 2,
+        centerY: rect.top + rect.height / 2
+    };
+}
+
+// 智能定位悬浮框
+function positionTooltip(tooltipElement, selectionRect) {
+    const tooltipRect = tooltipElement.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    
+    const margin = 10; // 边距
+    let bestPosition = null;
+    let bestScore = -1;
+    
+    // 定义可能的位置策略（优先级从高到低）
+    const positions = [
+        // 上方中央
+        {
+            name: 'top-center',
+            x: selectionRect.centerX - tooltipRect.width / 2,
+            y: selectionRect.top - tooltipRect.height - margin,
+            priority: 4
+        },
+        // 下方中央
+        {
+            name: 'bottom-center',
+            x: selectionRect.centerX - tooltipRect.width / 2,
+            y: selectionRect.bottom + margin,
+            priority: 3
+        },
+        // 上方左对齐
+        {
+            name: 'top-left',
+            x: selectionRect.left,
+            y: selectionRect.top - tooltipRect.height - margin,
+            priority: 2
+        },
+        // 下方左对齐
+        {
+            name: 'bottom-left',
+            x: selectionRect.left,
+            y: selectionRect.bottom + margin,
+            priority: 2
+        },
+        // 右侧
+        {
+            name: 'right',
+            x: selectionRect.right + margin,
+            y: selectionRect.centerY - tooltipRect.height / 2,
+            priority: 1
+        },
+        // 左侧
+        {
+            name: 'left',
+            x: selectionRect.left - tooltipRect.width - margin,
+            y: selectionRect.centerY - tooltipRect.height / 2,
+            priority: 1
+        }
+    ];
+    
+    // 评估每个位置的可行性
+    for (const pos of positions) {
+        const score = evaluatePosition(pos, tooltipRect, viewportWidth, viewportHeight, scrollX, scrollY, margin);
+        if (score > bestScore) {
+            bestScore = score;
+            bestPosition = pos;
+        }
+    }
+    
+    // 如果没有找到完美位置，使用调整后的位置
+    if (bestPosition) {
+        const finalPos = adjustPositionToBounds(
+            bestPosition, 
+            tooltipRect, 
+            viewportWidth, 
+            viewportHeight, 
+            scrollX, 
+            scrollY, 
+            margin
+        );
+        
+        tooltipElement.style.left = `${finalPos.x}px`;
+        tooltipElement.style.top = `${finalPos.y}px`;
+    }
+}
+
+// 评估位置的可行性得分
+function evaluatePosition(position, tooltipRect, viewportWidth, viewportHeight, scrollX, scrollY, margin) {
+    let score = position.priority * 10; // 基础优先级分数
+    
+    // 检查是否在视口内
+    const inViewportX = position.x >= scrollX + margin && 
+                       position.x + tooltipRect.width <= scrollX + viewportWidth - margin;
+    const inViewportY = position.y >= scrollY + margin && 
+                       position.y + tooltipRect.height <= scrollY + viewportHeight - margin;
+    
+    if (inViewportX && inViewportY) {
+        score += 50; // 完全在视口内的奖励分数
+    } else {
+        // 部分超出视口的惩罚
+        if (!inViewportX) score -= 20;
+        if (!inViewportY) score -= 20;
+    }
+    
+    return score;
+}
+
+// 调整位置以适应边界
+function adjustPositionToBounds(position, tooltipRect, viewportWidth, viewportHeight, scrollX, scrollY, margin) {
+    let { x, y } = position;
+    
+    // 水平边界调整
+    if (x < scrollX + margin) {
+        x = scrollX + margin;
+    } else if (x + tooltipRect.width > scrollX + viewportWidth - margin) {
+        x = scrollX + viewportWidth - tooltipRect.width - margin;
+    }
+    
+    // 垂直边界调整
+    if (y < scrollY + margin) {
+        y = scrollY + margin;
+    } else if (y + tooltipRect.height > scrollY + viewportHeight - margin) {
+        y = scrollY + viewportHeight - tooltipRect.height - margin;
+    }
+    
+    return { x, y };
+}
+
+// 保留原函数作为备用（已废弃，但保持兼容性）
 function calculateTooltipPosition(event, tooltipElement) {
+    console.warn('calculateTooltipPosition 已废弃，请使用 positionTooltip');
     const rect = tooltipElement.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -310,6 +494,60 @@ function handleKeyDown(event) {
     if (event.key === 'Escape' && translationState.tooltipVisible) {
         hideTooltip();
     }
+}
+
+// 处理窗口大小变化事件
+function handleWindowResize() {
+    if (!translationState.tooltipVisible || !translationState.currentTooltip || !translationState.lastSelectionRect) {
+        return;
+    }
+    
+    // 清除之前的定时器
+    if (translationState.resizeTimer) {
+        clearTimeout(translationState.resizeTimer);
+    }
+    
+    // 防抖处理，避免频繁重新定位
+    translationState.resizeTimer = setTimeout(() => {
+        if (translationState.tooltipVisible && translationState.currentTooltip) {
+            // 重新获取选中文本位置（可能因为窗口变化而改变）
+            const currentSelectionRect = getSelectionPosition();
+            if (currentSelectionRect) {
+                translationState.lastSelectionRect = currentSelectionRect;
+                positionTooltip(translationState.currentTooltip, currentSelectionRect);
+            } else if (translationState.lastSelectionRect) {
+                // 如果无法获取当前选中位置，使用保存的位置
+                positionTooltip(translationState.currentTooltip, translationState.lastSelectionRect);
+            }
+        }
+    }, 150);
+}
+
+// 处理页面滚动事件
+function handleWindowScroll() {
+    if (!translationState.tooltipVisible || !translationState.currentTooltip || !translationState.lastSelectionRect) {
+        return;
+    }
+    
+    // 清除之前的定时器
+    if (translationState.scrollTimer) {
+        clearTimeout(translationState.scrollTimer);
+    }
+    
+    // 防抖处理，避免频繁重新定位
+    translationState.scrollTimer = setTimeout(() => {
+        if (translationState.tooltipVisible && translationState.currentTooltip) {
+            // 重新获取选中文本位置（滚动后位置会改变）
+            const currentSelectionRect = getSelectionPosition();
+            if (currentSelectionRect) {
+                translationState.lastSelectionRect = currentSelectionRect;
+                positionTooltip(translationState.currentTooltip, currentSelectionRect);
+            } else {
+                // 如果选中文本已经不可见（滚动出视口），隐藏悬浮框
+                hideTooltip();
+            }
+        }
+    }, 100);
 }
 
 // 导出函数供全局使用
