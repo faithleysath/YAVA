@@ -102,7 +102,6 @@ function createTooltipElement(word) {
     tooltip.innerHTML = `
         <div class="word-tooltip-header">
             <div class="word-tooltip-word">${word}</div>
-            <button class="word-tooltip-close" onclick="window.hideWordTooltip()">×</button>
         </div>
         <div class="word-tooltip-content">
             <div class="word-tooltip-loading">
