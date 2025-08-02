@@ -44,6 +44,11 @@ export default async function handler(request) {
             generationConfig: { responseMimeType: "application/json" }
           };
 
+          // 人为添加25秒等待时间来测试响应要求
+          console.log('开始25秒等待测试...');
+          await new Promise(resolve => setTimeout(resolve, 25000));
+          console.log('25秒等待完成，开始请求Gemini API...');
+
           // 普通HTTP请求到Gemini API（非流式）
           const response = await fetch(geminiUrl, {
             method: 'POST',
