@@ -3,12 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 智能单词陪练 (V2.4)</title>
+    <title>AI 智能单词陪练 - 懂你的个性化单词学习工具</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="AI智能单词陪练是一款由大语言模型驱动的个性化单词学习工具。通过创意造句、逆向翻译、完形填空等多种智能测试模式，结合情景挑战和AI实时反馈，帮助你高效、深入地掌握英语单词。">
+    <meta name="keywords" content="AI, 单词, 英语学习, 智能陪练, 大语言模型, 英语单词, 背单词, 词汇, English learning, vocabulary, AI word trainer">
+    <meta name="author" content="Laysath">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://yava.laysath.cn/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yava.laysath.cn/">
+    <meta property="og:title" content="AI 智能单词陪练 - 懂你的个性化单词学习工具">
+    <meta property="og:description" content="利用大语言模型，通过创意造句、逆向翻译等智能模式，高效掌握英语单词。提供AI实时反馈，让学习更智能。">
+    <meta property="og:image" content="https://yava.laysath.cn/images/og-preview.png">
+    <meta property="og:site_name" content="AI 智能单词陪练">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://yava.laysath.cn/">
+    <meta property="twitter:title" content="AI 智能单词陪练 - 懂你的个性化单词学习工具">
+    <meta property="twitter:description" content="利用大语言模型，通过创意造句、逆向翻译等智能模式，高效掌握英语单词。提供AI实时反馈，让学习更智能。">
+    <meta property="twitter:image" content="https://yava.laysath.cn/images/og-preview.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.loli.net">
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
     <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "AI 智能单词陪练",
+      "url": "https://yava.laysath.cn/",
+      "description": "一款由大语言模型驱动的个性化单词学习工具，通过智能测试和实时反馈帮助用户高效掌握英语单词。",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "browserRequirements": "Requires a modern web browser with JavaScript enabled.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Laysath",
+        "url": "https://github.com/faithleysath"
+      },
+      "inLanguage": "zh-CN",
+      "keywords": "AI, 单词, 英语学习, 智能陪练, 大语言模型, 词汇"
+    }
+    </script>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
@@ -33,14 +81,14 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl sm:text-2xl font-bold">我的单词列表</h2>
                     <div class="flex items-center gap-2">
-                        <button onclick="openSettingsModal()" title="设置" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                        <button onclick="openSettingsModal()" title="设置" aria-label="打开设置" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         </button>
                         <div id="data-controls" class="flex gap-2 hidden">
-                            <button onclick="importData()" title="导入进度" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                            <button onclick="importData()" title="导入进度" aria-label="导入进度" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                             </button>
-                            <button onclick="exportData()" title="导出进度" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
+                            <button onclick="exportData()" title="导出进度" aria-label="导出进度" class="text-slate-500 hover:text-blue-600 p-1 rounded-full hover:bg-slate-100 transition-colors">
                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                             </button>
                         </div>

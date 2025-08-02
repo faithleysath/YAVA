@@ -9,6 +9,7 @@
 - 🔄 **进度跟踪**: 自动记录学习进度，支持导入导出
 - 🌐 **多API支持**: 支持 Gemini、DeepSeek 等多种AI模型
 - 🚀 **中转服务**: 通过 Vercel Edge Function 解决 Gemini 访问问题
+- 📖 **划词翻译 & 生词本**: 在页面任意位置划词翻译，并一键将生词添加到个人生词本中进行管理和学习。
 
 ## 快速开始
 
@@ -108,7 +109,9 @@
 │   ├── settings.js            # 设置管理
 │   ├── state.js               # 状态管理
 │   ├── testing.js             # 测试模式
-│   └── ui.js                  # UI 工具
+│   ├── ui.js                  # UI 工具
+│   ├── word-translation.js    # 划词翻译逻辑
+│   └── vocabulary-book.js     # 生词本逻辑
 ├── index.html                 # 主页面
 ├── vercel.json                # Vercel 配置
 └── README.md                  # 说明文档
