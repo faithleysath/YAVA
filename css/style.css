@@ -254,6 +254,9 @@ body {
             margin-bottom: 12px;
             padding-bottom: 8px;
             border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .word-tooltip-word {
@@ -261,6 +264,38 @@ body {
             font-weight: 700;
             color: #1e293b;
             letter-spacing: 0.5px;
+            flex: 1;
+        }
+
+        .word-tooltip-retry {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            color: #64748b;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .word-tooltip-retry:hover {
+            background-color: #f1f5f9;
+            color: #3b82f6;
+            transform: rotate(180deg);
+        }
+
+        .word-tooltip-retry:active {
+            transform: rotate(180deg) scale(0.95);
+        }
+
+        .word-tooltip-retry svg {
+            width: 16px;
+            height: 16px;
+            transition: inherit;
         }
 
 

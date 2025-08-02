@@ -137,6 +137,13 @@ function createTooltipElement(word) {
     tooltip.innerHTML = `
         <div class="word-tooltip-header">
             <div class="word-tooltip-word">${word}</div>
+            <button class="word-tooltip-retry" title="重新翻译" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
         </div>
         <div class="word-tooltip-content">
             <div class="word-tooltip-loading">
@@ -145,6 +152,13 @@ function createTooltipElement(word) {
             </div>
         </div>
     `;
+    
+    // 添加重试按钮点击事件
+    const retryButton = tooltip.querySelector('.word-tooltip-retry');
+    retryButton.addEventListener('click', (e) => {
+        e.stopPropagation(); // 防止事件冒泡
+        handleRetryTranslation(word, tooltip);
+    });
     
     // 添加淡入动画
     tooltip.style.opacity = '0';
@@ -353,6 +367,12 @@ function showLoadingState(tooltip) {
 
 // 显示错误状态
 function showErrorState(tooltip, errorMessage) {
+    // 显示重试按钮
+    const retryButton = tooltip.querySelector('.word-tooltip-retry');
+    if (retryButton) {
+        retryButton.style.display = 'block';
+    }
+    
     const content = tooltip.querySelector('.word-tooltip-content');
     content.innerHTML = `
         <div class="word-tooltip-error text-center py-4">
@@ -374,12 +394,23 @@ async function getTranslation(word) {
 1. 如果这不是一个有效的英文单词，请在 "error" 字段中说明
 2. 如果是有效单词，请提供完整的学习信息
 3. 一个单词可能有多种词性，请全部列出（用斜杠分隔，如：n./v./adj.）
-4. 提供该单词的所有不同含义，确保每个含义都是真正不同的，不能有意思相近的重复含义
+4. 提供该单词的所有不同含义，必须用中文表达，确保每个含义都是真正不同的，不能有意思相近的重复含义
 5. 含义要按重要性和使用频率排序
 
-示例单词分析：
-- "run" 作为动词可以表示"跑步"、"经营"、"运行"等完全不同的含义
-- "bank" 作为名词可以表示"银行"、"河岸"等完全不同的含义
+一个示例：
+{
+  "word": "embed",
+  "partOfSpeech": "v.",
+  "allMeanings": "嵌入；植入",
+  "examUsage": "科技、文化类文章，如embed technology（嵌入技术）、embed in culture（融入文化）",
+  "exampleSentence": "The reporter was embedded with the troops.",
+  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入，比如钉子嵌入木头像进了床",
+  "error": null
+}
+
+示例分析：
+- "run" 作为动词可以表示"跑步；经营；运行"等完全不同的中文含义
+- "bank" 作为名词可以表示"银行；河岸"等完全不同的中文含义
 - 避免列出意思相近的含义，如"快乐"和"高兴"应该合并为一个含义
 
 输出格式要求：请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记：
@@ -387,10 +418,10 @@ async function getTranslation(word) {
 {
   "word": "${word}",
   "partOfSpeech": "所有词性（用斜杠分隔，如：n./v./adj.）",
-  "allMeanings": "所有不同含义（用分号分隔，确保每个含义都是真正不同的意思）",
-  "examUsage": "考研高频考法，如embrace new ideas（接受新观点）、embrace challenges（迎接挑战）",
-  "exampleSentence": "She embraced the challenge with confidence.",
-  "memoryTip": "embrace挑战，需要你brave（勇敢的）",
+  "allMeanings": "所有不同的中文含义（用分号分隔，确保每个含义都是真正不同的意思）",
+  "examUsage": "考研高频考法，如embed technology（嵌入技术）、embed in culture（融入文化）",
+  "exampleSentence": "The reporter was embedded with the troops.",
+  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入，比如钉子嵌入木头像进了床",
   "error": null
 }
 
@@ -422,6 +453,12 @@ async function getTranslation(word) {
 
 // 显示翻译结果
 function displayTranslationResult(tooltip, result) {
+    // 显示重试按钮
+    const retryButton = tooltip.querySelector('.word-tooltip-retry');
+    if (retryButton) {
+        retryButton.style.display = 'block';
+    }
+    
     if (result.error) {
         showErrorState(tooltip, result.error);
         return;
@@ -556,6 +593,71 @@ function handleWindowScroll() {
             }
         }
     }, 100);
+}
+
+// 处理重试翻译
+async function handleRetryTranslation(word, tooltip) {
+    // 如果正在翻译中，忽略重试请求
+    if (translationState.isTranslating) {
+        return;
+    }
+    
+    try {
+        // 设置翻译状态
+        translationState.isTranslating = true;
+        
+        // 隐藏重试按钮
+        const retryButton = tooltip.querySelector('.word-tooltip-retry');
+        if (retryButton) {
+            retryButton.style.display = 'none';
+        }
+        
+        // 显示加载状态
+        showLoadingState(tooltip);
+        
+        // 清除该单词的缓存，强制重新获取翻译
+        translationState.translationCache.delete(word.toLowerCase());
+        
+        // 重新获取翻译结果
+        const translationResult = await getTranslation(word);
+        
+        if (translationResult && translationState.tooltipVisible) {
+            displayTranslationResult(tooltip, translationResult);
+            
+            // 内容更新后重新定位
+            if (translationState.lastSelectionRect) {
+                requestAnimationFrame(() => {
+                    positionTooltip(tooltip, translationState.lastSelectionRect);
+                });
+            }
+            
+            // 显示重试成功提示
+            showToast('翻译已重新生成', 'success');
+        }
+    } catch (error) {
+        console.error('重试翻译失败:', error);
+        if (translationState.tooltipVisible) {
+            showErrorState(tooltip, '重试翻译失败，请稍后再试');
+            
+            // 显示重试按钮
+            const retryButton = tooltip.querySelector('.word-tooltip-retry');
+            if (retryButton) {
+                retryButton.style.display = 'block';
+            }
+            
+            // 错误状态显示后重新定位
+            if (translationState.lastSelectionRect) {
+                requestAnimationFrame(() => {
+                    positionTooltip(tooltip, translationState.lastSelectionRect);
+                });
+            }
+            
+            // 显示错误提示
+            showToast('重试翻译失败', 'error');
+        }
+    } finally {
+        translationState.isTranslating = false;
+    }
 }
 
 // 导出函数供全局使用
