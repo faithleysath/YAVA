@@ -77,8 +77,8 @@ export function applyPreset(presetName) {
         baseUrlInput.value = presets[presetName].baseUrl;
         modelNameInput.value = presets[presetName].modelName;
         
-        // 对于中转服务，只锁定Base URL，允许用户修改模型
-        if (presetName === 'gemini-proxy') {
+        // 对于Gemini相关预设，只锁定Base URL，允许用户修改模型
+        if (presetName === 'gemini-proxy' || presetName === 'gemini') {
             baseUrlInput.disabled = true;
             modelNameInput.disabled = false; // 允许修改模型
             modelNameInput.focus(); // 聚焦到模型输入框
@@ -110,11 +110,17 @@ function updatePresetButtons() {
     customBtn.className = `${baseClasses} ${inactiveClass}`;
 
     let isPresetMatch = false;
-    let isProxyWithCustomModel = false;
+    let isGeminiWithCustomModel = false;
     
-    if (currentBaseUrl === presets.gemini.baseUrl && currentModelName === presets.gemini.modelName) {
-        geminiBtn.className = `${baseClasses} ${activeClass}`;
-        isPresetMatch = true;
+    if (currentBaseUrl === presets.gemini.baseUrl) {
+        if (currentModelName === presets.gemini.modelName) {
+            // 标准Gemini预设
+            geminiBtn.className = `${baseClasses} ${activeClass}`;
+            isPresetMatch = true;
+        } else {
+            // Gemini直连但使用自定义模型
+            isGeminiWithCustomModel = true;
+        }
     } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl) {
         if (currentModelName === presets['gemini-proxy'].modelName) {
             // 标准中转预设
@@ -122,7 +128,7 @@ function updatePresetButtons() {
             isPresetMatch = true;
         } else {
             // 中转服务但使用自定义模型
-            isProxyWithCustomModel = true;
+            isGeminiWithCustomModel = true;
         }
     } else if (currentBaseUrl === presets.deepseek.baseUrl && currentModelName === presets.deepseek.modelName) {
         deepseekBtn.className = `${baseClasses} ${activeClass}`;
@@ -132,8 +138,8 @@ function updatePresetButtons() {
     if (isPresetMatch) {
         baseUrlInput.disabled = true;
         modelNameInput.disabled = true;
-    } else if (isProxyWithCustomModel) {
-        // 中转服务 + 自定义模型：锁定Base URL，允许修改模型
+    } else if (isGeminiWithCustomModel) {
+        // Gemini服务 + 自定义模型：锁定Base URL，允许修改模型
         customBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
