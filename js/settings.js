@@ -11,6 +11,10 @@ const presets = {
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
         modelName: 'models/gemini-2.5-flash-lite'
     },
+    'gemini-proxy': {
+        baseUrl: '/api/callGemini',
+        modelName: 'models/gemini-2.5-flash-lite'
+    },
     deepseek: {
         baseUrl: 'https://api.deepseek.com/v1',
         modelName: 'deepseek-chat'
@@ -63,6 +67,8 @@ export function applyPreset(presetName) {
         const baseClasses = 'preset-btn font-semibold py-2 px-4 rounded-lg transition-colors text-sm';
         
         document.getElementById('preset-gemini').className = `${baseClasses} ${inactiveClass}`;
+        const geminiProxyBtn = document.getElementById('preset-gemini-proxy');
+        if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${inactiveClass}`;
         document.getElementById('preset-deepseek').className = `${baseClasses} ${inactiveClass}`;
         document.getElementById('preset-custom').className = `${baseClasses} ${activeClass}`;
 
@@ -80,6 +86,7 @@ function updatePresetButtons() {
     const currentModelName = modelNameInput.value.trim();
 
     const geminiBtn = document.getElementById('preset-gemini');
+    const geminiProxyBtn = document.getElementById('preset-gemini-proxy');
     const deepseekBtn = document.getElementById('preset-deepseek');
     const customBtn = document.getElementById('preset-custom');
 
@@ -90,12 +97,16 @@ function updatePresetButtons() {
 
     // Reset all buttons to inactive
     geminiBtn.className = `${baseClasses} ${inactiveClass}`;
+    if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${inactiveClass}`;
     deepseekBtn.className = `${baseClasses} ${inactiveClass}`;
     customBtn.className = `${baseClasses} ${inactiveClass}`;
 
     let isPresetMatch = false;
     if (currentBaseUrl === presets.gemini.baseUrl && currentModelName === presets.gemini.modelName) {
         geminiBtn.className = `${baseClasses} ${activeClass}`;
+        isPresetMatch = true;
+    } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl && currentModelName === presets['gemini-proxy'].modelName) {
+        if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
         isPresetMatch = true;
     } else if (currentBaseUrl === presets.deepseek.baseUrl && currentModelName === presets.deepseek.modelName) {
         deepseekBtn.className = `${baseClasses} ${activeClass}`;

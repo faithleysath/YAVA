@@ -10,13 +10,23 @@ export async function callLLM(prompt, options = {}) {
         return null;
     }
 
-    // 检查是 Gemini 还是 OpenAI 格式
+    // 检测是否使用中转服务
+    const isProxy = apiSettings.baseUrl.includes('/api/callGemini');
     const isGemini = apiSettings.baseUrl.includes('generativelanguage.googleapis.com');
     const isCompatibleOpenAI = apiSettings.baseUrl.endsWith('/v1');
 
     let API_URL, requestBody, headers;
 
-    if (isGemini) {
+    if (isProxy) {
+        // 使用中转服务
+        API_URL = apiSettings.baseUrl;
+        headers = { 'Content-Type': 'application/json' };
+        requestBody = {
+            apiKey: apiSettings.apiKey,
+            modelName: apiSettings.modelName,
+            prompt: prompt
+        };
+    } else if (isGemini) {
         API_URL = `${apiSettings.baseUrl}/${apiSettings.modelName}:generateContent?key=${apiSettings.apiKey}`;
         headers = { 'Content-Type': 'application/json' };
         requestBody = {
@@ -54,10 +64,34 @@ export async function callLLM(prompt, options = {}) {
             throw new Error(`API 请求失败，状态码: ${response.status}`);
         }
 
-        const data = await response.json();
+        let data;
+        
+        // 处理流式响应（仅对中转服务）
+        if (isProxy) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let result = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                result += decoder.decode(value);
+            }
+            
+            data = JSON.parse(result);
+            
+            // 检查中转服务返回的错误
+            if (data.error) {
+                throw new Error(data.message || 'API请求失败');
+            }
+        } else {
+            data = await response.json();
+        }
+        
         let content = null;
 
-        if (isGemini) {
+        if (isProxy || isGemini) {
+            // 处理Gemini响应格式（直连或中转）
             if (data.candidates && data.candidates.length > 0 && data.candidates[0].content.parts) {
                 content = data.candidates[0].content.parts[0].text;
             } else if (data.promptFeedback && data.promptFeedback.blockReason) {
