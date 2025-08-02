@@ -1,3 +1,7 @@
+export const config = {
+  runtime: 'edge',
+};
+
 export default async function handler(request) {
   // 处理CORS预检请求
   if (request.method === 'OPTIONS') {

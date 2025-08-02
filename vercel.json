@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/callGemini.js": {
-      "runtime": "@vercel/edge"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
