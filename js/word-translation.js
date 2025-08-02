@@ -1,6 +1,7 @@
 import { callLLM } from './api.js';
 import { showToast } from './ui.js';
 import { addWordToVocab } from './vocabulary-book.js';
+import { appState } from './state.js';
 
 // 翻译状态管理
 const translationState = {
@@ -466,6 +467,8 @@ function displayTranslationResult(tooltip, result) {
     }
     
     const content = tooltip.querySelector('.word-tooltip-content');
+    const isAlreadyAdded = appState.vocabularyBook.some(item => item.word.toLowerCase() === result.word.toLowerCase());
+
     content.innerHTML = `
         <div class="word-tooltip-sections space-y-3">
             ${result.partOfSpeech ? `
@@ -504,7 +507,7 @@ function displayTranslationResult(tooltip, result) {
             ` : ''}
         </div>
         <div class="word-tooltip-footer mt-4 pt-3 border-t border-slate-100">
-            <button id="add-to-vocab-btn" class="w-full bg-blue-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+            <button id="add-to-vocab-btn" class="w-full text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors">
                 添加到生词本
             </button>
         </div>
@@ -512,14 +515,22 @@ function displayTranslationResult(tooltip, result) {
 
     const addToVocabBtn = tooltip.querySelector('#add-to-vocab-btn');
     if (addToVocabBtn) {
-        addToVocabBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            addWordToVocab(result);
-            // 可选：禁用按钮或改变样式表示已添加
-            addToVocabBtn.textContent = '已添加';
+        if (isAlreadyAdded) {
+            addToVocabBtn.textContent = '已在生词本中';
             addToVocabBtn.disabled = true;
-            addToVocabBtn.classList.add('bg-green-600', 'hover:bg-green-600');
-        });
+            addToVocabBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        } else {
+            addToVocabBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            addToVocabBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addWordToVocab(result);
+                // 更新按钮状态
+                addToVocabBtn.textContent = '已添加';
+                addToVocabBtn.disabled = true;
+                addToVocabBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                addToVocabBtn.classList.add('bg-green-600', 'cursor-not-allowed');
+            });
+        }
     }
 }
 
