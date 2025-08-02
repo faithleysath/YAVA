@@ -13,6 +13,20 @@
       ],
       "createdAt": "2025-08-02",
       "updatedAt": "2025-08-02"
+    },
+    {
+      "id": "redbook_u13",
+      "name": "【红宝书】Unit13",
+      "description": "8.1单词任务",
+      "filename": "redbook_u13.csv",
+      "wordCount": 66,
+      "difficulty": "中高级",
+      "tags": [
+        "考研",
+        "红宝书"
+      ],
+      "createdAt": "2025-08-02",
+      "updatedAt": "2025-08-02"
     }
   ]
 }
