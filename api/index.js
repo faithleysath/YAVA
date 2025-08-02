@@ -14,7 +14,7 @@ export default async function handler(request) {
     const incomingData = await request.json();
     
     const apiKey = incomingData.apiKey || process.env.GEMINI_API_KEY;
-    const modelName = incomingData.modelName || process.env.GEMINI_MODEL_NAME || 'gemini-1.5-flash-latest';
+    const modelName = incomingData.modelName || process.env.GEMINI_MODEL_NAME || 'gemini-2.5-flash-lite';
     const prompt = incomingData.prompt;
 
     if (!apiKey) {

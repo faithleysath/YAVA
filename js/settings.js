@@ -9,7 +9,7 @@ const modelNameInput = document.getElementById('model-name-input');
 const presets = {
     gemini: {
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        modelName: 'models/gemini-2.5-flash-lite'
+        modelName: 'gemini-2.5-flash-lite'
     },
     deepseek: {
         baseUrl: 'https://api.deepseek.com/v1',
