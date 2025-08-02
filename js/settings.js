@@ -9,11 +9,11 @@ const modelNameInput = document.getElementById('model-name-input');
 const presets = {
     gemini: {
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        modelName: 'models/gemini-2.5-flash-lite'
+        modelName: 'gemini-2.5-flash-lite'
     },
     'gemini-proxy': {
         baseUrl: '/api/callGemini',
-        modelName: 'models/gemini-2.5-flash-lite'
+        modelName: 'gemini-2.5-flash-lite'
     },
     deepseek: {
         baseUrl: 'https://api.deepseek.com/v1',
@@ -76,8 +76,16 @@ export function applyPreset(presetName) {
     } else if (presets[presetName]) {
         baseUrlInput.value = presets[presetName].baseUrl;
         modelNameInput.value = presets[presetName].modelName;
-        // After setting values, let updatePresetButtons sync the UI.
-        updatePresetButtons();
+        
+        // 对于中转服务，只锁定Base URL，允许用户修改模型
+        if (presetName === 'gemini-proxy') {
+            baseUrlInput.disabled = true;
+            modelNameInput.disabled = false; // 允许修改模型
+            modelNameInput.focus(); // 聚焦到模型输入框
+        } else {
+            // After setting values, let updatePresetButtons sync the UI.
+            updatePresetButtons();
+        }
     }
 }
 
@@ -102,12 +110,20 @@ function updatePresetButtons() {
     customBtn.className = `${baseClasses} ${inactiveClass}`;
 
     let isPresetMatch = false;
+    let isProxyWithCustomModel = false;
+    
     if (currentBaseUrl === presets.gemini.baseUrl && currentModelName === presets.gemini.modelName) {
         geminiBtn.className = `${baseClasses} ${activeClass}`;
         isPresetMatch = true;
-    } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl && currentModelName === presets['gemini-proxy'].modelName) {
-        if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
-        isPresetMatch = true;
+    } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl) {
+        if (currentModelName === presets['gemini-proxy'].modelName) {
+            // 标准中转预设
+            if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
+            isPresetMatch = true;
+        } else {
+            // 中转服务但使用自定义模型
+            isProxyWithCustomModel = true;
+        }
     } else if (currentBaseUrl === presets.deepseek.baseUrl && currentModelName === presets.deepseek.modelName) {
         deepseekBtn.className = `${baseClasses} ${activeClass}`;
         isPresetMatch = true;
@@ -116,7 +132,13 @@ function updatePresetButtons() {
     if (isPresetMatch) {
         baseUrlInput.disabled = true;
         modelNameInput.disabled = true;
+    } else if (isProxyWithCustomModel) {
+        // 中转服务 + 自定义模型：锁定Base URL，允许修改模型
+        customBtn.className = `${baseClasses} ${activeClass}`;
+        baseUrlInput.disabled = true;
+        modelNameInput.disabled = false;
     } else {
+        // 完全自定义
         customBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = false;
         modelNameInput.disabled = false;

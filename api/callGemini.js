@@ -36,8 +36,9 @@ export default async function handler(request) {
             return;
           }
           
-          // 构建Gemini API请求
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+          // 构建Gemini API请求，确保模型名称有正确的前缀
+          const fullModelName = modelName.startsWith('models/') ? modelName : `models/${modelName}`;
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${apiKey}`;
           const requestBody = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json" }

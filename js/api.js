@@ -27,7 +27,9 @@ export async function callLLM(prompt, options = {}) {
             prompt: prompt
         };
     } else if (isGemini) {
-        API_URL = `${apiSettings.baseUrl}/${apiSettings.modelName}:generateContent?key=${apiSettings.apiKey}`;
+        // 确保模型名称有正确的前缀
+        const modelName = apiSettings.modelName.startsWith('models/') ? apiSettings.modelName : `models/${apiSettings.modelName}`;
+        API_URL = `${apiSettings.baseUrl}/${modelName}:generateContent?key=${apiSettings.apiKey}`;
         headers = { 'Content-Type': 'application/json' };
         requestBody = {
             contents: [{ parts: [{ text: prompt }] }],

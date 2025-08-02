@@ -146,7 +146,15 @@
                 </div>
                 <div>
                     <label for="model-name-input" class="block text-sm font-medium text-slate-700 mb-1">模型名称</label>
-                    <input type="text" id="model-name-input" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="models/gemini-2.5-flash-lite">
+                    <input type="text" id="model-name-input" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="gemini-2.5-flash-lite" list="model-suggestions">
+                    <datalist id="model-suggestions">
+                        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (推荐)</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                    </datalist>
+                    <p class="text-xs text-slate-500 mt-1">💡 使用中转服务时可选择任意 Gemini 模型</p>
                 </div>
             </div>
             <div class="mt-8 flex justify-end gap-4">
@@ -162,4 +170,3 @@
 
 </body>
 </html>
->>>>>>> REPLACE

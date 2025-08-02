@@ -1,7 +1,7 @@
 export const apiSettings = {
     apiKey: '',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta', // 用户必须在设置中配置
-    modelName: 'models/gemini-2.5-flash-lite'
+    modelName: 'gemini-2.5-flash-lite'
 };
 
 export const appState = {

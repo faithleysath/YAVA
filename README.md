@@ -33,6 +33,7 @@
 - 通过 Vercel Edge Function 中转
 - 解决国内访问 Gemini 的网络问题
 - 需要部署到 Vercel
+- 支持所有 Gemini 模型（2.5 Flash Lite、2.5 Flash、1.5 Flash、1.5 Pro等）
 
 #### DeepSeek
 - 国内可直接访问
