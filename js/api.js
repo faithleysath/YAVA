@@ -4,60 +4,67 @@ import { showToast, setLoading } from './ui.js';
 async function handleStreamResponse(response) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullText = '';
+    let combinedContent = '';
+    let finalData = {};
+    let buffer = '';
 
-    // 第一步：完整读取流到字符串
     while (true) {
         const { done, value } = await reader.read();
         if (done) {
+            // Process any remaining data in the buffer
+            if (buffer.startsWith('data: ')) {
+                const jsonString = buffer.substring(6).trim();
+                if (jsonString) {
+                    try {
+                        const chunk = JSON.parse(jsonString);
+                        if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
+                            combinedContent += chunk.candidates[0].content.parts[0].text;
+                        }
+                        finalData = chunk; // Keep the last chunk for metadata
+                    } catch (e) {
+                        console.error("Failed to parse final stream chunk:", jsonString, e);
+                    }
+                }
+            }
             break;
         }
-        fullText += decoder.decode(value, { stream: true });
-    }
-
-    // 第二步：根据 curl 测试结果，将多个 JSON 对象包装成一个有效的 JSON 数组字符串
-    try {
-        // 在字符串开头加上 '['，在结尾加上 ']'
-        const jsonArrayString = `[${fullText}]`;
-        const chunks = JSON.parse(jsonArrayString);
         
-        let combinedContent = '';
-        let finalData = {};
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // Keep the last, possibly incomplete line
 
-        // 第三步：遍历数组，拼接内容
-        chunks.forEach((chunk, index) => {
-            if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
-                combinedContent += chunk.candidates[0].content.parts[0].text;
-            }
-            // 使用最后一个数据块的元数据（如安全评级等）
-            if (index === chunks.length - 1) {
-                finalData = chunk;
-            }
-        });
-        
-        // 第四步：构建一个与非流式 API 响应格式兼容的最终对象
-        if (finalData.candidates && finalData.candidates[0]) {
-             finalData.candidates[0].content.parts[0].text = combinedContent;
-        } else {
-            // 如果流中没有有效内容，创建一个空的结构以避免后续代码出错
-            finalData = {
-                candidates: [{
-                    content: {
-                        parts: [{ text: combinedContent }]
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const jsonString = line.substring(6).trim();
+                if (jsonString) {
+                    try {
+                        const chunk = JSON.parse(jsonString);
+                        if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
+                            combinedContent += chunk.candidates[0].content.parts[0].text;
+                        }
+                        finalData = chunk; // Keep the last chunk for metadata
+                    } catch (e) {
+                        console.error("Failed to parse stream chunk:", jsonString, e);
                     }
-                }]
-            };
+                }
+            }
         }
-        return finalData;
-
-    } catch (e) {
-        console.error("Error processing stream:", e, "Raw text from stream:", fullText);
-        // 增加对不完整 JSON 的提示
-        if (e instanceof SyntaxError) {
-             throw new Error("Failed to parse streamed response. The data from the API might be incomplete or malformed.");
-        }
-        throw new Error("Failed to parse streamed JSON response.");
     }
+
+    // Construct the final object, similar to the old function
+    if (finalData.candidates && finalData.candidates[0]) {
+        finalData.candidates[0].content.parts[0].text = combinedContent;
+    } else {
+        // If the stream was empty or only contained invalid data, create a fallback structure
+        finalData = {
+            candidates: [{
+                content: {
+                    parts: [{ text: combinedContent }]
+                }
+            }]
+        };
+    }
+    return finalData;
 }
 
 
@@ -70,7 +77,7 @@ export async function callLLM(prompt, options = {}) {
     let API_URL, requestBody, headers;
 
     if (isOfficialGemini) {
-        API_URL = '/api';
+        API_URL = '/api/callGemini';
         headers = { 'Content-Type': 'application/json' };
         requestBody = {
             prompt: prompt,

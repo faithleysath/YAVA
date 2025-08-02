@@ -60,35 +60,39 @@ export default async function handler(request) {
       });
     }
 
-    // 创建一个可读流并将 Gemini 的响应流直接 pipe 过去
+    // 创建一个可读流用于 Server-Sent Events
+    const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
         const reader = geminiResponse.body.getReader();
-        const decoder = new TextDecoder();
-
-        function push() {
-          reader.read().then(({ done, value }) => {
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
             if (done) {
-              controller.close();
-              return;
+              break;
             }
-            // 直接将原始数据块（value）转发给客户端
+            // 将收到的数据块作为 event-stream 的 data 字段发送
+            controller.enqueue(encoder.encode('data: '));
             controller.enqueue(value);
-            push();
-          }).catch(err => {
-            console.error('Stream reading error:', err);
-            controller.error(err);
-          });
+            controller.enqueue(encoder.encode('\n\n'));
+          }
+        } catch (err) {
+          console.error('Stream reading error:', err);
+          controller.error(err);
+        } finally {
+          controller.close();
         }
-        push();
       }
     });
 
-    // 返回流式响应
+    // 返回 event-stream 响应
     return new Response(stream, {
       status: 200,
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
