@@ -25,7 +25,7 @@ function processLoadedData() {
     document.getElementById('data-controls').classList.remove('hidden');
 }
 
-function parseCSV(csvText) {
+export function parseCSV(csvText) {
     const lines = csvText.split('\n').filter(line => line.trim() !== '');
     if (lines.length < 3) {
         showToast('CSV 文件格式不正确，至少需要3行（标题、表头、数据）。', 'error');
