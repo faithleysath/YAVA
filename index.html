@@ -150,7 +150,12 @@
                     <input type="text" id="model-name-input" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="输入模型名称">
                 </div>
             </div>
-            <div class="mt-8 flex justify-end gap-4">
+            <div class="mt-6 pt-4 border-t border-slate-200">
+                <button onclick="showChangelogManually()" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    📋 查看更新日志
+                </button>
+            </div>
+            <div class="mt-6 flex justify-end gap-4">
                 <button onclick="closeSettingsModal()" class="bg-slate-100 text-slate-700 py-2 px-4 rounded-lg hover:bg-slate-200 transition-colors">取消</button>
                 <button onclick="saveSettings()" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">保存</button>
             </div>

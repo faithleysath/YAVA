@@ -3,6 +3,7 @@ import { handleFile, exportData, importData, downloadTemplate } from './file-han
 import { submitTranslation, nextStep } from './learning.js';
 import { startTest, submitTestAnswer, nextTestQuestion } from './testing.js';
 import { openSettingsModal, closeSettingsModal, saveSettings, loadSettings, applyPreset } from './settings.js';
+import { checkVersionUpdate, showChangelogManually } from './version.js';
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -11,8 +12,11 @@ const baseUrlInput = document.getElementById('base-url-input');
 const modelNameInput = document.getElementById('model-name-input');
 
 // Initial setup
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     loadSettings();
+    
+    // 检查版本更新
+    await checkVersionUpdate();
 
     // Event Listeners
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
@@ -49,3 +53,4 @@ window.submitTranslation = submitTranslation;
 window.nextStep = nextStep;
 window.submitTestAnswer = submitTestAnswer;
 window.nextTestQuestion = nextTestQuestion;
+window.showChangelogManually = showChangelogManually;
