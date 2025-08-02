@@ -447,27 +447,19 @@ function calculateOptimalPosition(targetRect, tooltip) {
     if (preferredTopY >= scrollY + safeMargin) {
         // 放在上方
         y = preferredTopY;
-    } else if (preferredBottomY + tooltipHeight <= scrollY + viewportHeight - safeMargin) {
-        // 放在下方，确保不会溢出下边界
-        y = preferredBottomY;
     } else {
-        // 两边都不够空间，选择能完全显示的位置
-        const availableSpaceAbove = targetRect.top - safeMargin;
-        const availableSpaceBelow = viewportHeight - targetRect.bottom - safeMargin;
+        // 上方空间不足，检查下方空间
+        const bottomBoundary = scrollY + viewportHeight - safeMargin;
+        const wouldOverflowBottom = preferredBottomY + tooltipHeight > bottomBoundary;
         
-        if (availableSpaceAbove >= tooltipHeight) {
-            // 上方有足够空间
-            y = scrollY + safeMargin;
-        } else if (availableSpaceBelow >= tooltipHeight) {
-            // 下方有足够空间
-            y = scrollY + viewportHeight - tooltipHeight - safeMargin;
+        if (!wouldOverflowBottom) {
+            // 下方有足够空间，放在下方
+            y = preferredBottomY;
         } else {
-            // 都不够，选择空间较大的一侧，允许部分内容超出但确保主要内容可见
-            if (availableSpaceAbove > availableSpaceBelow) {
-                y = scrollY + safeMargin;
-            } else {
-                y = scrollY + viewportHeight - tooltipHeight - safeMargin;
-            }
+            // 下方也会溢出，强制放在视口内的安全位置
+            y = bottomBoundary - tooltipHeight;
+            // 确保不会超出上边界
+            y = Math.max(y, scrollY + safeMargin);
         }
     }
     
