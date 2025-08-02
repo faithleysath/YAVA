@@ -234,7 +234,7 @@ body {
             /* 当单词列表为空时，在移动端减小其高度 */
             #word-list-container:has(> p:only-child) {
                 height: auto;
-                min-height: 10rem; /* 保持一个最小高度 */
+                min-height: 5rem; /* 保持一个最小高度 */
             }
         }
 
