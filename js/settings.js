@@ -21,12 +21,29 @@ const presets = {
     }
 };
 
+// 存储每个预设的API Key
+let presetApiKeys = {
+    'gemini': '',
+    'gemini-proxy': '',
+    'deepseek': '',
+    'custom': ''
+};
+
+// 当前选中的预设
+let currentPreset = 'gemini';
+
 export function openSettingsModal() {
-    apiKeyInput.value = apiSettings.apiKey;
+    // 根据当前预设加载对应的API Key
+    apiKeyInput.value = presetApiKeys[currentPreset] || '';
     baseUrlInput.value = apiSettings.baseUrl;
     modelNameInput.value = apiSettings.modelName;
     updatePresetButtons(); // This will also set the initial disabled state
     settingsModal.style.display = 'flex';
+    
+    // 自动focus到API Key输入框
+    setTimeout(() => {
+        apiKeyInput.focus();
+    }, 100);
 }
 
 export function closeSettingsModal() {
@@ -34,6 +51,9 @@ export function closeSettingsModal() {
 }
 
 export function saveSettings() {
+    // 保存当前预设的API Key
+    presetApiKeys[currentPreset] = apiKeyInput.value.trim();
+    
     apiSettings.apiKey = apiKeyInput.value.trim();
     apiSettings.baseUrl = baseUrlInput.value.trim();
     apiSettings.modelName = modelNameInput.value.trim();
@@ -43,7 +63,11 @@ export function saveSettings() {
         return;
     }
 
+    // 保存API设置和预设API Key
     localStorage.setItem('apiSettings', JSON.stringify(apiSettings));
+    localStorage.setItem('presetApiKeys', JSON.stringify(presetApiKeys));
+    localStorage.setItem('currentPreset', currentPreset);
+    
     showToast('设置已保存！', 'success');
     closeSettingsModal();
 }
@@ -54,9 +78,28 @@ export function loadSettings() {
         const parsedSettings = JSON.parse(savedSettings);
         Object.assign(apiSettings, parsedSettings);
     }
+    
+    // 加载预设API Key
+    const savedPresetApiKeys = localStorage.getItem('presetApiKeys');
+    if (savedPresetApiKeys) {
+        const parsedPresetApiKeys = JSON.parse(savedPresetApiKeys);
+        Object.assign(presetApiKeys, parsedPresetApiKeys);
+    }
+    
+    // 加载当前预设
+    const savedCurrentPreset = localStorage.getItem('currentPreset');
+    if (savedCurrentPreset) {
+        currentPreset = savedCurrentPreset;
+    }
 }
 
 export function applyPreset(presetName) {
+    // 保存当前预设的API Key
+    presetApiKeys[currentPreset] = apiKeyInput.value.trim();
+    
+    // 更新当前预设
+    currentPreset = presetName;
+    
     if (presetName === 'custom') {
         // When custom is explicitly selected, enable inputs and set UI state directly.
         baseUrlInput.disabled = false;
@@ -72,7 +115,9 @@ export function applyPreset(presetName) {
         document.getElementById('preset-deepseek').className = `${baseClasses} ${inactiveClass}`;
         document.getElementById('preset-custom').className = `${baseClasses} ${activeClass}`;
 
-        baseUrlInput.focus();
+        // 加载自定义预设的API Key
+        apiKeyInput.value = presetApiKeys[presetName] || '';
+        apiKeyInput.focus();
     } else if (presets[presetName]) {
         baseUrlInput.value = presets[presetName].baseUrl;
         modelNameInput.value = presets[presetName].modelName;
@@ -80,7 +125,10 @@ export function applyPreset(presetName) {
         // 所有预设都只锁定Base URL，允许用户自定义模型名称
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
-        modelNameInput.focus();
+        
+        // 加载对应预设的API Key
+        apiKeyInput.value = presetApiKeys[presetName] || '';
+        apiKeyInput.focus();
         
         // 更新按钮状态
         updatePresetButtons();
@@ -89,7 +137,6 @@ export function applyPreset(presetName) {
 
 function updatePresetButtons() {
     const currentBaseUrl = baseUrlInput.value.trim();
-    const currentModelName = modelNameInput.value.trim();
 
     const geminiBtn = document.getElementById('preset-gemini');
     const geminiProxyBtn = document.getElementById('preset-gemini-proxy');
@@ -115,18 +162,21 @@ function updatePresetButtons() {
         geminiBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
+        currentPreset = 'gemini';
         matchedPreset = true;
     } else if (currentBaseUrl === presets['gemini-proxy'].baseUrl) {
         // Gemini 中转
         if (geminiProxyBtn) geminiProxyBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
+        currentPreset = 'gemini-proxy';
         matchedPreset = true;
     } else if (currentBaseUrl === presets.deepseek.baseUrl) {
         // DeepSeek
         deepseekBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = true;
         modelNameInput.disabled = false;
+        currentPreset = 'deepseek';
         matchedPreset = true;
     }
     
@@ -135,5 +185,6 @@ function updatePresetButtons() {
         customBtn.className = `${baseClasses} ${activeClass}`;
         baseUrlInput.disabled = false;
         modelNameInput.disabled = false;
+        currentPreset = 'custom';
     }
 }
