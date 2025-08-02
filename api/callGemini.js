@@ -60,11 +60,12 @@ export default async function handler(request) {
       });
     }
 
-    // 创建一个可读流用于 Server-Sent Events
-    const encoder = new TextEncoder();
+    // 创建一个可读流，将 Gemini 的响应转换为 Server-Sent Events (SSE)
     const stream = new ReadableStream({
       async start(controller) {
         const reader = geminiResponse.body.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
         
         try {
           while (true) {
@@ -72,10 +73,12 @@ export default async function handler(request) {
             if (done) {
               break;
             }
-            // 将收到的数据块作为 event-stream 的 data 字段发送
-            controller.enqueue(encoder.encode('data: '));
-            controller.enqueue(value);
-            controller.enqueue(encoder.encode('\n\n'));
+            // 将从 Gemini 收到的每个数据块解码为文本
+            const textChunk = decoder.decode(value);
+            // 将文本块格式化为标准的 Server-Sent Event 消息
+            // 每条消息都是 "data: <chunk>\n\n"
+            const sseMessage = `data: ${textChunk}\n\n`;
+            controller.enqueue(encoder.encode(sseMessage));
           }
         } catch (err) {
           console.error('Stream reading error:', err);

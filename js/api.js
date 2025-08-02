@@ -4,67 +4,72 @@ import { showToast, setLoading } from './ui.js';
 async function handleStreamResponse(response) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let combinedContent = '';
-    let finalData = {};
+    let fullText = '';
     let buffer = '';
 
+    // 1. Read the entire stream
     while (true) {
         const { done, value } = await reader.read();
         if (done) {
-            // Process any remaining data in the buffer
-            if (buffer.startsWith('data: ')) {
-                const jsonString = buffer.substring(6).trim();
-                if (jsonString) {
-                    try {
-                        const chunk = JSON.parse(jsonString);
-                        if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
-                            combinedContent += chunk.candidates[0].content.parts[0].text;
-                        }
-                        finalData = chunk; // Keep the last chunk for metadata
-                    } catch (e) {
-                        console.error("Failed to parse final stream chunk:", jsonString, e);
-                    }
-                }
-            }
             break;
         }
-        
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // Keep the last, possibly incomplete line
+    }
 
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                const jsonString = line.substring(6).trim();
-                if (jsonString) {
-                    try {
-                        const chunk = JSON.parse(jsonString);
-                        if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
-                            combinedContent += chunk.candidates[0].content.parts[0].text;
-                        }
-                        finalData = chunk; // Keep the last chunk for metadata
-                    } catch (e) {
-                        console.error("Failed to parse stream chunk:", jsonString, e);
-                    }
-                }
+    // 2. Process the buffered text to extract JSON data from SSE messages
+    const lines = buffer.split('\n');
+    const jsonChunks = [];
+    for (const line of lines) {
+        if (line.startsWith('data: ')) {
+            const dataContent = line.substring(6).trim();
+            if (dataContent) {
+                jsonChunks.push(dataContent);
             }
         }
     }
 
-    // Construct the final object, similar to the old function
-    if (finalData.candidates && finalData.candidates[0]) {
-        finalData.candidates[0].content.parts[0].text = combinedContent;
-    } else {
-        // If the stream was empty or only contained invalid data, create a fallback structure
-        finalData = {
-            candidates: [{
-                content: {
-                    parts: [{ text: combinedContent }]
-                }
-            }]
-        };
+    // 3. Combine the JSON chunks into a single valid JSON array string
+    // The Gemini stream sends multiple JSON objects. We need to wrap them in an array.
+    try {
+        const jsonArrayString = `[${jsonChunks.join(',')}]`;
+        const chunks = JSON.parse(jsonArrayString);
+        
+        let combinedContent = '';
+        let finalData = {};
+
+        // 4. Iterate through the chunks to build the final response object
+        chunks.forEach((chunk, index) => {
+            if (chunk.candidates && chunk.candidates[0].content && chunk.candidates[0].content.parts) {
+                combinedContent += chunk.candidates[0].content.parts[0].text;
+            }
+            // Use the last chunk for metadata (like safety ratings)
+            if (index === chunks.length - 1) {
+                finalData = chunk;
+            }
+        });
+        
+        // 5. Construct the final object in a format compatible with the non-streaming response
+        if (finalData.candidates && finalData.candidates[0]) {
+             finalData.candidates[0].content.parts[0].text = combinedContent;
+        } else {
+            // Create a fallback structure if the stream was empty or invalid
+            finalData = {
+                candidates: [{
+                    content: {
+                        parts: [{ text: combinedContent }]
+                    }
+                }]
+            };
+        }
+        return finalData;
+
+    } catch (e) {
+        console.error("Error processing combined stream:", e, "Combined JSON string:", `[${jsonChunks.join(',')}]`);
+        if (e instanceof SyntaxError) {
+             throw new Error("Failed to parse streamed response. The data from the API might be incomplete or malformed.");
+        }
+        throw new Error("Failed to parse streamed JSON response.");
     }
-    return finalData;
 }
 
 
