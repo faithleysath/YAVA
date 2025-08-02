@@ -23,7 +23,6 @@ export function initWordTranslation() {
     document.addEventListener('keydown', handleKeyDown);
     
     // 监听滚动事件，让悬浮框跟随滚动
-    window.addEventListener('scroll', handleScroll, true);
     document.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleResize);
     
