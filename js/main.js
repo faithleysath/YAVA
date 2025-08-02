@@ -4,6 +4,7 @@ import { submitTranslation, nextStep } from './learning.js';
 import { startTest, submitTestAnswer, nextTestQuestion } from './testing.js';
 import { openSettingsModal, closeSettingsModal, saveSettings, loadSettings, applyPreset } from './settings.js';
 import { checkVersionUpdate, showChangelogManually } from './version.js';
+import { loadWordlistsIndex, renderWordlistCard } from './wordlist-manager.js';
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -17,6 +18,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 检查版本更新
     await checkVersionUpdate();
+
+    // 初始化词表显示
+    await initializeWordlists();
 
     // Event Listeners
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
@@ -39,6 +43,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
+
+// 初始化词表显示
+async function initializeWordlists() {
+    const wordlistsContainer = document.getElementById('wordlists-container');
+    
+    try {
+        const wordlistsData = await loadWordlistsIndex();
+        if (wordlistsData && wordlistsData.wordlists) {
+            const wordlistsHtml = wordlistsData.wordlists.map(wordlist => renderWordlistCard(wordlist)).join('');
+            wordlistsContainer.innerHTML = wordlistsHtml;
+        } else {
+            wordlistsContainer.innerHTML = `
+                <div class="col-span-full text-center py-8 text-slate-500">
+                    <p>暂无可用词表</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('初始化词表失败:', error);
+        wordlistsContainer.innerHTML = `
+            <div class="col-span-full text-center py-8 text-slate-500">
+                <p>加载词表失败，请刷新页面重试</p>
+            </div>
+        `;
+    }
+}
 
 // Expose functions to global scope for inline event handlers
 window.openSettingsModal = openSettingsModal;

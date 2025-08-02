@@ -194,3 +194,40 @@ body {
                 padding: 12px;
             }
         }
+
+        /* 词表卡片样式 */
+        .wordlist-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .wordlist-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        
+        .wordlist-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .wordlist-card {
+                padding: 1rem;
+            }
+        }

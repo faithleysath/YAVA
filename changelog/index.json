@@ -1,11 +1,17 @@
 {
   "versions": [
     {
-      "version": "2.1",
+      "version": "2.2",
       "date": "2025-01-02",
+      "file": "v2.2.txt",
+      "title": "作者自用词表功能"
+    },
+    {
+      "version": "2.1",
+      "date": "2024-12-28",
       "file": "v2.1.txt",
-      "title": "免费模式支持"
+      "title": "新增免费模式"
     }
   ],
-  "latest": "2.1"
+  "latest": "2.2"
 }
