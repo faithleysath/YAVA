@@ -429,46 +429,61 @@ function calculateOptimalPosition(targetRect, tooltip) {
     const tooltipWidth = tooltipRect.width;
     const tooltipHeight = tooltipRect.height;
     
-    // 边距
-    const margin = 10;
-    
-    // 计算各个方向的可用空间
-    const spaceAbove = targetRect.top;
-    const spaceBelow = viewportHeight - targetRect.bottom;
-    const spaceLeft = targetRect.left;
-    const spaceRight = viewportWidth - targetRect.right;
+    // 紧贴文本的小间距
+    const gap = 5;
+    // 视口边界的安全边距
+    const safeMargin = 10;
     
     let x, y;
     
-    // 垂直位置优先级：上方 > 下方
-    if (spaceAbove >= tooltipHeight + margin) {
+    // 默认水平位置：与选中文本居中对齐
+    x = targetX + (targetWidth / 2) - (tooltipWidth / 2);
+    
+    // 垂直位置：优先放在上方，紧贴文本
+    const preferredTopY = targetY - tooltipHeight - gap;
+    const preferredBottomY = targetY + targetHeight + gap;
+    
+    // 检查上方是否有足够空间且不会越界
+    if (preferredTopY >= scrollY + safeMargin) {
         // 放在上方
-        y = targetY - tooltipHeight - margin;
-    } else if (spaceBelow >= tooltipHeight + margin) {
-        // 放在下方
-        y = targetY + targetHeight + margin;
+        y = preferredTopY;
+    } else if (preferredBottomY + tooltipHeight <= scrollY + viewportHeight - safeMargin) {
+        // 放在下方，确保不会溢出下边界
+        y = preferredBottomY;
     } else {
-        // 空间不足，选择空间较大的一侧
-        if (spaceAbove > spaceBelow) {
-            y = scrollY + margin;
+        // 两边都不够空间，选择能完全显示的位置
+        const availableSpaceAbove = targetRect.top - safeMargin;
+        const availableSpaceBelow = viewportHeight - targetRect.bottom - safeMargin;
+        
+        if (availableSpaceAbove >= tooltipHeight) {
+            // 上方有足够空间
+            y = scrollY + safeMargin;
+        } else if (availableSpaceBelow >= tooltipHeight) {
+            // 下方有足够空间
+            y = scrollY + viewportHeight - tooltipHeight - safeMargin;
         } else {
-            y = scrollY + viewportHeight - tooltipHeight - margin;
+            // 都不够，选择空间较大的一侧，允许部分内容超出但确保主要内容可见
+            if (availableSpaceAbove > availableSpaceBelow) {
+                y = scrollY + safeMargin;
+            } else {
+                y = scrollY + viewportHeight - tooltipHeight - safeMargin;
+            }
         }
     }
     
-    // 水平位置：尽量居中对齐
-    x = targetX + (targetWidth / 2) - (tooltipWidth / 2);
+    // 水平边界检测：只有在会越界时才调整
+    const leftBoundary = scrollX + safeMargin;
+    const rightBoundary = scrollX + viewportWidth - tooltipWidth - safeMargin;
     
-    // 水平边界检测和调整
-    if (x < scrollX + margin) {
-        x = scrollX + margin;
-    } else if (x + tooltipWidth > scrollX + viewportWidth - margin) {
-        x = scrollX + viewportWidth - tooltipWidth - margin;
+    if (x < leftBoundary) {
+        x = leftBoundary;
+    } else if (x > rightBoundary) {
+        x = rightBoundary;
     }
     
     // 确保位置不为负数
-    x = Math.max(x, scrollX + margin);
-    y = Math.max(y, scrollY + margin);
+    x = Math.max(x, scrollX + safeMargin);
+    y = Math.max(y, scrollY + safeMargin);
     
     return { x, y };
 }
