@@ -128,7 +128,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-2">预设</label>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <button id="preset-gemini" onclick="applyPreset('gemini')" class="preset-btn font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Gemini</button>
-                        <button id="preset-gemini-proxy" onclick="applyPreset('gemini-proxy')" class="preset-btn font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Gemini (中转)</button>
+                        <button id="preset-gemini-proxy" onclick="applyPreset('gemini-proxy')" class="preset-btn font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Gemini(中转,免费)</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <button id="preset-deepseek" onclick="applyPreset('deepseek')" class="preset-btn font-semibold py-2 px-4 rounded-lg transition-colors text-sm">DeepSeek</button>
@@ -139,6 +139,7 @@
                 <div>
                     <label for="api-key-input" class="block text-sm font-medium text-slate-700 mb-1">API Key</label>
                     <input type="password" id="api-key-input" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="输入你的 API Key">
+                    <p id="api-key-hint" class="text-xs text-slate-500 mt-1 hidden">💡 选择"Gemini(中转,免费)"预设时，API Key可以留空使用免费服务</p>
                 </div>
                 <div>
                     <label for="base-url-input" class="block text-sm font-medium text-slate-700 mb-1">Base URL (可选)</label>

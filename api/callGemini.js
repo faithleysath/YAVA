@@ -27,10 +27,24 @@ export default async function handler(request) {
           const requestData = await request.json();
           const { apiKey, modelName, prompt } = requestData;
           
-          if (!apiKey || !modelName || !prompt) {
+          // 处理API Key：如果为空，尝试从环境变量获取
+          let finalApiKey = apiKey;
+          if (!finalApiKey) {
+            finalApiKey = process.env.GEMINI_API_KEY;
+            if (!finalApiKey) {
+              controller.enqueue(new TextEncoder().encode(JSON.stringify({
+                error: true,
+                message: 'API Key未提供且环境变量中未配置GEMINI_API_KEY'
+              })));
+              controller.close();
+              return;
+            }
+          }
+          
+          if (!modelName || !prompt) {
             controller.enqueue(new TextEncoder().encode(JSON.stringify({
               error: true,
-              message: 'Missing required parameters: apiKey, modelName, or prompt'
+              message: 'Missing required parameters: modelName or prompt'
             })));
             controller.close();
             return;
@@ -38,7 +52,7 @@ export default async function handler(request) {
           
           // 构建Gemini API请求，确保模型名称有正确的前缀
           const fullModelName = modelName.startsWith('models/') ? modelName : `models/${modelName}`;
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${apiKey}`;
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${fullModelName}:generateContent?key=${finalApiKey}`;
           const requestBody = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json" }

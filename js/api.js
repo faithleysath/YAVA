@@ -1,19 +1,31 @@
 import { apiSettings } from './state.js';
 import { showToast, setLoading } from './ui.js';
+import { FREE_MODE_ENABLED } from './config.js';
 
 export async function callLLM(prompt, options = {}) {
     const { retries = 3, delay = 1000, useGlobalLoader = true } = options;
-
-    if (!apiSettings.apiKey || !apiSettings.baseUrl) {
-        showToast('请点击"我的单词列表"旁边的设置按钮，填入 API Key 和 Base URL！', 'warning', { duration: 6000, persistent: true });
-        if (useGlobalLoader) setLoading(false);
-        return null;
-    }
 
     // 检测是否使用中转服务
     const isProxy = apiSettings.baseUrl.includes('/api/callGemini');
     const isGemini = apiSettings.baseUrl.includes('generativelanguage.googleapis.com');
     const isCompatibleOpenAI = apiSettings.baseUrl.endsWith('/v1');
+    
+    // 检测是否为免费模式（使用中转服务且启用免费模式）
+    const isFreeMode = FREE_MODE_ENABLED && isProxy;
+    
+    // 验证必需参数
+    if (!apiSettings.baseUrl) {
+        showToast('请点击"我的单词列表"旁边的设置按钮，填入 Base URL！', 'warning', { duration: 6000, persistent: true });
+        if (useGlobalLoader) setLoading(false);
+        return null;
+    }
+    
+    // 非免费模式下需要API Key
+    if (!isFreeMode && !apiSettings.apiKey) {
+        showToast('请点击"我的单词列表"旁边的设置按钮，填入 API Key！', 'warning', { duration: 6000, persistent: true });
+        if (useGlobalLoader) setLoading(false);
+        return null;
+    }
 
     let API_URL, requestBody, headers;
 

@@ -1,5 +1,6 @@
 import { apiSettings } from './state.js';
 import { showToast } from './ui.js';
+import { FREE_MODE_ENABLED } from './config.js';
 
 const settingsModal = document.getElementById('settings-modal');
 const apiKeyInput = document.getElementById('api-key-input');
@@ -38,6 +39,7 @@ export function openSettingsModal() {
     baseUrlInput.value = apiSettings.baseUrl;
     modelNameInput.value = apiSettings.modelName;
     updatePresetButtons(); // This will also set the initial disabled state
+    updateApiKeyHint(currentPreset); // 更新API Key提示信息
     settingsModal.style.display = 'flex';
     
     // 自动focus到API Key输入框
@@ -58,8 +60,19 @@ export function saveSettings() {
     apiSettings.baseUrl = baseUrlInput.value.trim();
     apiSettings.modelName = modelNameInput.value.trim();
     
-    if (!apiSettings.apiKey || !apiSettings.baseUrl || !apiSettings.modelName) {
-        showToast('API Key, Base URL 和模型名称均为必填项。', 'warning');
+    // 检测是否为免费模式（使用中转服务且启用免费模式）
+    const isProxy = apiSettings.baseUrl.includes('/api/callGemini');
+    const isFreeMode = FREE_MODE_ENABLED && isProxy;
+    
+    // 验证必填项
+    if (!apiSettings.baseUrl || !apiSettings.modelName) {
+        showToast('Base URL 和模型名称为必填项。', 'warning');
+        return;
+    }
+    
+    // 非免费模式下需要API Key
+    if (!isFreeMode && !apiSettings.apiKey) {
+        showToast('API Key 为必填项。如需使用免费模式，请选择"Gemini(中转,免费)"预设。', 'warning');
         return;
     }
 
@@ -68,7 +81,11 @@ export function saveSettings() {
     localStorage.setItem('presetApiKeys', JSON.stringify(presetApiKeys));
     localStorage.setItem('currentPreset', currentPreset);
     
-    showToast('设置已保存！', 'success');
+    if (isFreeMode && !apiSettings.apiKey) {
+        showToast('设置已保存！正在使用免费模式，服务器将使用环境变量中的API Key。', 'success');
+    } else {
+        showToast('设置已保存！', 'success');
+    }
     closeSettingsModal();
 }
 
@@ -99,6 +116,9 @@ export function applyPreset(presetName) {
     
     // 更新当前预设
     currentPreset = presetName;
+    
+    // 更新API Key提示信息的显示状态
+    updateApiKeyHint(presetName);
     
     if (presetName === 'custom') {
         // When custom is explicitly selected, enable inputs and set UI state directly.
@@ -132,6 +152,20 @@ export function applyPreset(presetName) {
         
         // 更新按钮状态
         updatePresetButtons();
+    }
+}
+
+function updateApiKeyHint(presetName) {
+    const apiKeyHint = document.getElementById('api-key-hint');
+    if (!apiKeyHint) return;
+    
+    // 检测是否为免费模式预设
+    const isFreePreset = FREE_MODE_ENABLED && presetName === 'gemini-proxy';
+    
+    if (isFreePreset) {
+        apiKeyHint.classList.remove('hidden');
+    } else {
+        apiKeyHint.classList.add('hidden');
     }
 }
 
@@ -187,4 +221,7 @@ function updatePresetButtons() {
         modelNameInput.disabled = false;
         currentPreset = 'custom';
     }
+    
+    // 更新API Key提示信息
+    updateApiKeyHint(currentPreset);
 }
