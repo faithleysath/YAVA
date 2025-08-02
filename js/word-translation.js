@@ -373,13 +373,21 @@ async function getTranslation(word) {
 要求：
 1. 如果这不是一个有效的英文单词，请在 "error" 字段中说明
 2. 如果是有效单词，请提供完整的学习信息
+3. 一个单词可能有多种词性，请全部列出（用斜杠分隔，如：n./v./adj.）
+4. 提供该单词的所有不同含义，确保每个含义都是真正不同的，不能有意思相近的重复含义
+5. 含义要按重要性和使用频率排序
+
+示例单词分析：
+- "run" 作为动词可以表示"跑步"、"经营"、"运行"等完全不同的含义
+- "bank" 作为名词可以表示"银行"、"河岸"等完全不同的含义
+- 避免列出意思相近的含义，如"快乐"和"高兴"应该合并为一个含义
 
 输出格式要求：请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记：
 
 {
   "word": "${word}",
-  "partOfSpeech": "词性（如：n./v./adj.等）",
-  "commonMeanings": "常见含义（用分号分隔多个含义）",
+  "partOfSpeech": "所有词性（用斜杠分隔，如：n./v./adj.）",
+  "allMeanings": "所有不同含义（用分号分隔，确保每个含义都是真正不同的意思）",
   "examUsage": "考研高频考法，如embrace new ideas（接受新观点）、embrace challenges（迎接挑战）",
   "exampleSentence": "She embraced the challenge with confidence.",
   "memoryTip": "embrace挑战，需要你brave（勇敢的）",
@@ -429,10 +437,10 @@ function displayTranslationResult(tooltip, result) {
                 </div>
             ` : ''}
             
-            ${result.commonMeanings ? `
+            ${result.allMeanings ? `
                 <div class="word-tooltip-section">
-                    <div class="word-tooltip-label">常见含义</div>
-                    <div class="word-tooltip-text">${result.commonMeanings}</div>
+                    <div class="word-tooltip-label">所有含义</div>
+                    <div class="word-tooltip-text">${result.allMeanings}</div>
                 </div>
             ` : ''}
             
