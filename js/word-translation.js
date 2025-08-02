@@ -8,7 +8,8 @@ const translationState = {
     translationCache: new Map(),
     tooltipVisible: false,
     debounceTimer: null,
-    positionTracker: null // 用于追踪选中文字位置的元素
+    selectionRange: null, // 保存选中文本的范围信息
+    scrollThrottle: null // 滚动事件节流定时器
 };
 
 // 初始化划词翻译功能
@@ -25,6 +26,10 @@ export function initWordTranslation() {
     
     // 监听窗口大小变化事件
     window.addEventListener('resize', handleResize);
+    
+    // 监听页面滚动事件
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true });
     
     console.log('划词翻译功能已初始化');
 }
@@ -67,8 +72,8 @@ async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
     
-    // 创建位置追踪元素
-    createPositionTracker();
+    // 保存选中文本的范围信息
+    saveSelectionRange();
     
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
@@ -76,8 +81,10 @@ async function showTranslationTooltip(word, event) {
     translationState.currentTooltip = tooltip;
     translationState.tooltipVisible = true;
     
-    // 初始位置设置
-    updateTooltipPosition();
+    // 等待DOM渲染完成后设置位置
+    requestAnimationFrame(() => {
+        updateTooltipPosition();
+    });
     
     // 显示加载状态
     showLoadingState(tooltip);
@@ -89,6 +96,10 @@ async function showTranslationTooltip(word, event) {
         
         if (translationResult && translationState.tooltipVisible) {
             displayTranslationResult(tooltip, translationResult);
+            // 内容更新后重新计算位置
+            requestAnimationFrame(() => {
+                updateTooltipPosition();
+            });
         }
     } catch (error) {
         console.error('翻译失败:', error);
@@ -130,42 +141,28 @@ function createTooltipElement(word) {
     return tooltip;
 }
 
-// 创建位置追踪元素
-function createPositionTracker() {
-    // 清除之前的追踪元素
-    if (translationState.positionTracker) {
-        translationState.positionTracker.remove();
-    }
-    
+// 保存选中文本的范围信息
+function saveSelectionRange() {
     const selection = window.getSelection();
     if (selection.rangeCount === 0) {
+        translationState.selectionRange = null;
         return;
     }
     
     try {
         const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        
-        // 创建一个不可见的追踪元素，插入到选中文本的位置
-        const tracker = document.createElement('span');
-        tracker.style.cssText = `
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
-        `;
-        
-        // 将追踪元素插入到选中文本的开始位置
-        const clonedRange = range.cloneRange();
-        clonedRange.collapse(true); // 折叠到开始位置
-        clonedRange.insertNode(tracker);
-        
-        translationState.positionTracker = tracker;
-        
+        // 保存范围的详细信息，用于后续位置计算
+        translationState.selectionRange = {
+            startContainer: range.startContainer,
+            startOffset: range.startOffset,
+            endContainer: range.endContainer,
+            endOffset: range.endOffset,
+            // 保存初始的边界矩形信息作为备用
+            initialRect: range.getBoundingClientRect()
+        };
     } catch (error) {
-        console.error('创建位置追踪元素失败:', error);
+        console.error('保存选中范围失败:', error);
+        translationState.selectionRange = null;
     }
 }
 
@@ -309,16 +306,13 @@ function hideTooltip() {
         translationState.tooltipVisible = false;
     }
     
-    // 清理位置追踪元素
-    if (translationState.positionTracker) {
-        try {
-            if (translationState.positionTracker.parentNode) {
-                translationState.positionTracker.parentNode.removeChild(translationState.positionTracker);
-            }
-        } catch (error) {
-            console.error('清理位置追踪元素失败:', error);
-        }
-        translationState.positionTracker = null;
+    // 清理选中范围信息
+    translationState.selectionRange = null;
+    
+    // 清理滚动节流定时器
+    if (translationState.scrollThrottle) {
+        clearTimeout(translationState.scrollThrottle);
+        translationState.scrollThrottle = null;
     }
 }
 
@@ -338,6 +332,22 @@ function handleKeyDown(event) {
 }
 
 
+// 处理滚动事件
+function handleScroll(event) {
+    if (!translationState.currentTooltip || !translationState.tooltipVisible) {
+        return;
+    }
+    
+    // 使用节流来优化性能
+    if (translationState.scrollThrottle) {
+        clearTimeout(translationState.scrollThrottle);
+    }
+    
+    translationState.scrollThrottle = setTimeout(() => {
+        updateTooltipPosition();
+    }, 16); // 约60fps的更新频率
+}
+
 // 处理窗口大小变化事件
 function handleResize(event) {
     if (translationState.currentTooltip && translationState.tooltipVisible) {
@@ -353,63 +363,114 @@ function updateTooltipPosition() {
     }
     
     const tooltip = translationState.currentTooltip;
+    let targetRect = null;
     
-    // 优先使用位置追踪元素
-    if (translationState.positionTracker && translationState.positionTracker.parentNode) {
+    // 优先尝试重建选中范围来获取位置
+    if (translationState.selectionRange) {
         try {
-            const trackerRect = translationState.positionTracker.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
-            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-            
-            // 基于追踪元素的位置计算悬浮框位置
-            let x = trackerRect.left + scrollX - (tooltipRect.width / 2);
-            let y = trackerRect.top + scrollY - tooltipRect.height - 10;
-            
-            // 简单的边界检测
-            if (x < scrollX + 10) {
-                x = scrollX + 10;
-            }
-            if (x + tooltipRect.width > window.innerWidth + scrollX - 10) {
-                x = window.innerWidth + scrollX - tooltipRect.width - 10;
-            }
-            if (y < scrollY + 10) {
-                y = trackerRect.bottom + scrollY + 10;
-            }
-            
-            // 平滑更新位置
-            tooltip.style.transition = 'left 0.1s ease, top 0.1s ease';
-            tooltip.style.left = `${x}px`;
-            tooltip.style.top = `${y}px`;
-            
-            return;
+            const range = document.createRange();
+            range.setStart(translationState.selectionRange.startContainer, translationState.selectionRange.startOffset);
+            range.setEnd(translationState.selectionRange.endContainer, translationState.selectionRange.endOffset);
+            targetRect = range.getBoundingClientRect();
         } catch (error) {
-            console.error('使用位置追踪元素更新位置失败:', error);
+            console.error('重建选中范围失败:', error);
+            // 使用备用的初始矩形信息
+            if (translationState.selectionRange.initialRect) {
+                targetRect = translationState.selectionRange.initialRect;
+            }
         }
     }
     
-    // 备用方案：使用选中文本的范围
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) {
+    // 如果没有保存的范围信息，尝试使用当前选中的文本
+    if (!targetRect) {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            try {
+                const range = selection.getRangeAt(0);
+                targetRect = range.getBoundingClientRect();
+            } catch (error) {
+                console.error('获取当前选中范围失败:', error);
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+    
+    // 如果目标矩形无效（可能是因为元素不在视口中），直接返回
+    if (!targetRect || (targetRect.width === 0 && targetRect.height === 0)) {
         return;
     }
     
-    try {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        
-        let x = rect.left + scrollX + (rect.width / 2) - 140;
-        let y = rect.top + scrollY - 120;
-        
-        tooltip.style.transition = 'left 0.1s ease, top 0.1s ease';
-        tooltip.style.left = `${x}px`;
-        tooltip.style.top = `${y}px`;
-        
-    } catch (error) {
-        console.error('更新悬浮框位置时出错:', error);
+    // 计算悬浮框的最佳位置
+    const position = calculateOptimalPosition(targetRect, tooltip);
+    
+    // 应用位置
+    tooltip.style.transition = 'left 0.2s ease, top 0.2s ease';
+    tooltip.style.left = `${position.x}px`;
+    tooltip.style.top = `${position.y}px`;
+}
+
+// 计算悬浮框的最佳位置
+function calculateOptimalPosition(targetRect, tooltip) {
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // 目标元素的绝对位置
+    const targetX = targetRect.left + scrollX;
+    const targetY = targetRect.top + scrollY;
+    const targetWidth = targetRect.width;
+    const targetHeight = targetRect.height;
+    
+    // 悬浮框尺寸
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    
+    // 边距
+    const margin = 10;
+    
+    // 计算各个方向的可用空间
+    const spaceAbove = targetRect.top;
+    const spaceBelow = viewportHeight - targetRect.bottom;
+    const spaceLeft = targetRect.left;
+    const spaceRight = viewportWidth - targetRect.right;
+    
+    let x, y;
+    
+    // 垂直位置优先级：上方 > 下方
+    if (spaceAbove >= tooltipHeight + margin) {
+        // 放在上方
+        y = targetY - tooltipHeight - margin;
+    } else if (spaceBelow >= tooltipHeight + margin) {
+        // 放在下方
+        y = targetY + targetHeight + margin;
+    } else {
+        // 空间不足，选择空间较大的一侧
+        if (spaceAbove > spaceBelow) {
+            y = scrollY + margin;
+        } else {
+            y = scrollY + viewportHeight - tooltipHeight - margin;
+        }
     }
+    
+    // 水平位置：尽量居中对齐
+    x = targetX + (targetWidth / 2) - (tooltipWidth / 2);
+    
+    // 水平边界检测和调整
+    if (x < scrollX + margin) {
+        x = scrollX + margin;
+    } else if (x + tooltipWidth > scrollX + viewportWidth - margin) {
+        x = scrollX + viewportWidth - tooltipWidth - margin;
+    }
+    
+    // 确保位置不为负数
+    x = Math.max(x, scrollX + margin);
+    y = Math.max(y, scrollY + margin);
+    
+    return { x, y };
 }
 
 // 导出函数供全局使用
