@@ -1,10 +1,6 @@
 import { kv } from '@vercel/kv';
 
-// Vercel KV需要Node.js运行时，所以我们不再使用Edge配置
-// export const config = { runtime: 'edge' };
-
 export default async function handler(req, res) {
-    // 从请求URL中获取单词
     const { word } = req.query;
 
     if (!word) {
@@ -13,19 +9,27 @@ export default async function handler(req, res) {
 
     const normalizedWord = word.trim().toLowerCase();
     const cacheKey = `dict:${normalizedWord}`;
+    
+    // 检查KV环境变量是否存在，决定是否使用缓存
+    const useCache = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN;
 
     try {
-        // 1. 检查缓存
-        const cachedData = await kv.get(cacheKey);
-        if (cachedData) {
-            // 如果命中缓存，直接返回
-            res.setHeader('X-Vercel-Cache', 'HIT');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            return res.status(200).json(cachedData);
+        // 1. 如果配置了缓存，则检查缓存
+        if (useCache) {
+            const cachedData = await kv.get(cacheKey);
+            if (cachedData) {
+                console.log(`[CACHE HIT] Returning cached data for: ${normalizedWord}`);
+                res.setHeader('X-Vercel-Cache', 'HIT');
+                res.setHeader('Access-Control-Allow-Origin', '*');
+                return res.status(200).json(cachedData);
+            }
+            console.log(`[CACHE MISS] No cache found for: ${normalizedWord}. Fetching from source.`);
+            res.setHeader('X-Vercel-Cache', 'MISS');
+        } else {
+            console.log(`[NO CACHE] KV not configured. Fetching directly for: ${normalizedWord}.`);
         }
 
-        // 2. 如果未命中缓存，请求源API
-        res.setHeader('X-Vercel-Cache', 'MISS');
+        // 2. 如果未命中缓存或未配置缓存，请求源API
         const apiUrl = `https://api.dictionaryapi.dev/api/v2/entries/en/${normalizedWord}`;
         const apiResponse = await fetch(apiUrl);
 
@@ -36,8 +40,11 @@ export default async function handler(req, res) {
 
         const data = await apiResponse.json();
 
-        // 3. 将新数据存入缓存，设置过期时间为7天 (604800秒)
-        await kv.set(cacheKey, data, { ex: 604800 });
+        // 3. 如果配置了缓存，将新数据存入
+        if (useCache) {
+            console.log(`[CACHE SET] Storing data for: ${normalizedWord}`);
+            await kv.set(cacheKey, data, { ex: 604800 }); // 7天过期
+        }
 
         // 4. 返回数据
         res.setHeader('Access-Control-Allow-Origin', '*');
