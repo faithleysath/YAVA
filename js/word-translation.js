@@ -12,14 +12,33 @@ const translationState = {
     debounceTimer: null,
     lastSelectionRect: null, // 保存最后一次选中文本的位置
     resizeTimer: null,
-    scrollTimer: null
+    scrollTimer: null,
+    // 新增：选择检查相关状态
+    selectionCheckTimer: null,
+    lastCheckedSelection: '',
+    isCheckingSelection: false,
+    checkInterval: 200, // 检查间隔（毫秒）
+    maxCheckDuration: 2000, // 最大检查时长（毫秒）
+    stabilityCheckCount: 2 // 需要连续多少次检查结果相同才认为选择稳定
 };
+
+// 检测是否为移动设备
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           ('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0);
+}
 
 // 初始化划词翻译功能
 export function initWordTranslation() {
     // 监听文本选择事件
     document.addEventListener('mouseup', handleTextSelection);
     document.addEventListener('touchend', handleTextSelection);
+    
+    // 移动端额外监听 selectionchange 事件
+    if (isMobileDevice()) {
+        document.addEventListener('selectionchange', handleSelectionChange);
+    }
     
     // 监听点击事件，用于关闭悬浮框
     document.addEventListener('click', handleDocumentClick);
@@ -33,33 +52,123 @@ export function initWordTranslation() {
     // 监听页面滚动，重新定位悬浮框
     window.addEventListener('scroll', handleWindowScroll);
     
-    console.log('划词翻译功能已初始化');
+    console.log('划词翻译功能已初始化', isMobileDevice() ? '(移动端模式)' : '(桌面端模式)');
 }
 
 // 处理文本选择事件
 function handleTextSelection(event) {
+    // 停止之前的选择检查
+    stopSelectionCheck();
+    
     // 清除之前的防抖定时器
     if (translationState.debounceTimer) {
         clearTimeout(translationState.debounceTimer);
     }
     
-    // 防抖处理，避免频繁触发
-    translationState.debounceTimer = setTimeout(() => {
+    const isMobile = isMobileDevice();
+    
+    if (isMobile && event.type === 'touchend') {
+        // 移动端使用定时器检查机制
+        startSelectionCheck();
+    } else {
+        // 桌面端使用原有的防抖机制
+        translationState.debounceTimer = setTimeout(() => {
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            // 如果没有选中文本或正在翻译中，直接返回
+            if (!selectedText || translationState.isTranslating) {
+                return;
+            }
+            
+            // 验证是否为有效的英文单词
+            if (isValidWord(selectedText)) {
+                showTranslationTooltip(selectedText, event);
+            } else {
+                hideTooltip();
+            }
+        }, 300);
+    }
+}
+
+// 处理选择变化事件（移动端专用）
+function handleSelectionChange() {
+    if (!isMobileDevice() || translationState.isCheckingSelection) {
+        return;
+    }
+    
+    // 如果没有正在进行的检查，启动检查
+    if (!translationState.selectionCheckTimer) {
+        startSelectionCheck();
+    }
+}
+
+// 开始选择检查（移动端专用）
+function startSelectionCheck() {
+    if (translationState.isCheckingSelection) {
+        return;
+    }
+    
+    translationState.isCheckingSelection = true;
+    translationState.lastCheckedSelection = '';
+    
+    let checkCount = 0;
+    let stableCount = 0;
+    const maxChecks = Math.ceil(translationState.maxCheckDuration / translationState.checkInterval);
+    
+    console.log('开始移动端选择检查');
+    
+    translationState.selectionCheckTimer = setInterval(() => {
+        checkCount++;
+        
         const selection = window.getSelection();
-        const selectedText = selection.toString().trim();
+        const currentSelection = selection.toString().trim();
         
-        // 如果没有选中文本或正在翻译中，直接返回
-        if (!selectedText || translationState.isTranslating) {
-            return;
-        }
-        
-        // 验证是否为有效的英文单词
-        if (isValidWord(selectedText)) {
-            showTranslationTooltip(selectedText, event);
+        // 检查是否有有效选择
+        if (currentSelection && isValidWord(currentSelection)) {
+            // 检查选择是否稳定
+            if (currentSelection === translationState.lastCheckedSelection) {
+                stableCount++;
+                
+                // 如果选择稳定了足够次数，显示翻译
+                if (stableCount >= translationState.stabilityCheckCount) {
+                    console.log('检测到稳定选择:', currentSelection);
+                    stopSelectionCheck();
+                    showTranslationTooltip(currentSelection);
+                    return;
+                }
+            } else {
+                // 选择发生变化，重置稳定计数
+                stableCount = 0;
+                translationState.lastCheckedSelection = currentSelection;
+                console.log('检测到选择变化:', currentSelection);
+            }
         } else {
-            hideTooltip();
+            // 没有有效选择，重置状态
+            if (translationState.lastCheckedSelection) {
+                stableCount = 0;
+                translationState.lastCheckedSelection = '';
+                console.log('选择已清空');
+            }
         }
-    }, 300);
+        
+        // 超时停止检查
+        if (checkCount >= maxChecks) {
+            console.log('选择检查超时');
+            stopSelectionCheck();
+        }
+    }, translationState.checkInterval);
+}
+
+// 停止选择检查
+function stopSelectionCheck() {
+    if (translationState.selectionCheckTimer) {
+        clearInterval(translationState.selectionCheckTimer);
+        translationState.selectionCheckTimer = null;
+    }
+    
+    translationState.isCheckingSelection = false;
+    translationState.lastCheckedSelection = '';
 }
 
 // 验证是否为有效的英文单词
@@ -536,6 +645,9 @@ function displayTranslationResult(tooltip, result) {
 
 // 隐藏悬浮框
 function hideTooltip() {
+    // 停止选择检查
+    stopSelectionCheck();
+    
     if (translationState.currentTooltip) {
         const tooltip = translationState.currentTooltip;
         
