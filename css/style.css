@@ -45,6 +45,27 @@ body {
             border-color: #ef4444;
             color: #991b1b;
         }
+
+        /* 音标和发音按钮样式 */
+        .phonetic-text {
+            font-size: 1.1rem;
+            color: #64748b; /* slate-500 */
+        }
+
+        .audio-btn {
+            cursor: pointer;
+            color: #64748b; /* slate-500 */
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .audio-btn:hover {
+            color: #3b82f6; /* blue-600 */
+        }
         
         /* Toast 通知系统样式 */
         .toast-container {

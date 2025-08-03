@@ -1,6 +1,7 @@
 import { appState } from './state.js';
 import { showToast, switchView, renderWordList, updateUnmasteredCount } from './ui.js';
 import { callLLM } from './api.js';
+import { getWordPhonetics } from './dictionary-api.js';
 
 export function initializeMasteryState() {
     appState.masteryState = {};
@@ -26,6 +27,34 @@ async function startLearningMeaning() {
     const currentMeaning = meanings[appState.currentMeaningIndex];
 
     document.getElementById('learning-word').textContent = word;
+
+    const wordDetailsContainer = document.getElementById('learning-word-details');
+    wordDetailsContainer.innerHTML = ''; // 清空旧内容
+    getWordPhonetics(word).then(phonetics => {
+        if (phonetics && phonetics.phonetic) {
+            const phoneticEl = document.createElement('span');
+            phoneticEl.className = 'phonetic-text';
+            phoneticEl.textContent = `[${phonetics.phonetic}]`;
+            wordDetailsContainer.appendChild(phoneticEl);
+        }
+        if (phonetics && phonetics.audioUrl) {
+            const audioBtn = document.createElement('button');
+            audioBtn.className = 'audio-btn';
+            audioBtn.title = '播放发音';
+            audioBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>`;
+            audioBtn.onclick = () => {
+                try {
+                    const audio = new Audio(phonetics.audioUrl);
+                    audio.play().catch(e => console.error("音频播放失败:", e));
+                } catch (e) {
+                    console.error("创建音频对象失败:", e);
+                    showToast('无法播放音频文件', 'error');
+                }
+            };
+            wordDetailsContainer.appendChild(audioBtn);
+        }
+    });
+
     document.getElementById('learning-progress').textContent = `正在学习释义 ${appState.currentMeaningIndex + 1}/${meanings.length}: ${currentMeaning}`;
     
     document.getElementById('user-notes-content').innerHTML = `

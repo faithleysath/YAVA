@@ -2,6 +2,7 @@ import { callLLM } from './api.js';
 import { showToast } from './ui.js';
 import { addWordToVocab } from './vocabulary-book.js';
 import { appState } from './state.js';
+import { getWordPhonetics } from './dictionary-api.js';
 
 // 翻译状态管理
 const translationState = {
@@ -569,6 +570,40 @@ function displayTranslationResult(tooltip, result) {
     if (retryButton) {
         retryButton.style.display = 'block';
     }
+
+    // 在显示翻译结果的同时，获取音标和发音
+    const wordHeader = tooltip.querySelector('.word-tooltip-header');
+    getWordPhonetics(result.word).then(phonetics => {
+        if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
+            const detailsContainer = document.createElement('div');
+            detailsContainer.className = 'flex items-center gap-2 ml-2';
+            if (phonetics.phonetic) {
+                const phoneticEl = document.createElement('span');
+                phoneticEl.className = 'phonetic-text text-sm';
+                phoneticEl.textContent = `[${phonetics.phonetic}]`;
+                detailsContainer.appendChild(phoneticEl);
+            }
+            if (phonetics.audioUrl) {
+                const audioBtn = document.createElement('button');
+                audioBtn.className = 'audio-btn';
+                audioBtn.title = '播放发音';
+                audioBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>`;
+                audioBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    try {
+                        const audio = new Audio(phonetics.audioUrl);
+                        audio.play().catch(err => console.error("音频播放失败:", err));
+                    } catch (err) {
+                        console.error("创建音频对象失败:", err);
+                        showToast('无法播放音频文件', 'error');
+                    }
+                };
+                detailsContainer.appendChild(audioBtn);
+            }
+            // 插入到单词和重试按钮之间
+            wordHeader.insertBefore(detailsContainer, retryButton);
+        }
+    });
     
     if (result.error) {
         showErrorState(tooltip, result.error);

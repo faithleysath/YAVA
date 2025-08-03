@@ -1,5 +1,6 @@
 import { appState } from './state.js';
 import { selectMeaning } from './learning.js';
+import { getWordPhonetics } from './dictionary-api.js';
 
 const wordListContainer = document.getElementById('word-list-container');
 const loadingModal = document.getElementById('loading-modal');
@@ -107,8 +108,14 @@ export function renderWordList() {
         const word = wordObj['单词'];
         const details = document.createElement('details');
         details.className = 'group';
+        
         const summary = document.createElement('summary');
         summary.className = 'cursor-pointer p-2 rounded-md hover:bg-slate-100 list-none font-semibold flex justify-between items-center';
+        
+        const summaryContent = document.createElement('div');
+        summaryContent.className = 'flex items-center gap-2';
+
+        const wordSpan = document.createElement('span');
         
         const mastery = appState.masteryState[word];
         const totalMeanings = Object.keys(mastery).length;
@@ -119,7 +126,47 @@ export function renderWordList() {
             if (masteredCount === totalMeanings) statusClass = 'word-item-mastered';
             else if (masteredCount > 0) statusClass = 'word-item-in-progress';
         }
-        summary.innerHTML = `<span class="${statusClass}">${word}</span> <span class="text-sm text-slate-400">${masteredCount}/${totalMeanings}</span>`;
+        wordSpan.className = statusClass;
+        wordSpan.textContent = word;
+        summaryContent.appendChild(wordSpan);
+
+        const masterySpan = document.createElement('span');
+        masterySpan.className = 'text-sm text-slate-400';
+        masterySpan.textContent = `${masteredCount}/${totalMeanings}`;
+
+        summary.appendChild(summaryContent);
+        summary.appendChild(masterySpan);
+
+        details.addEventListener('toggle', (event) => {
+            if (event.target.open) {
+                const existingDetails = summaryContent.querySelector('.phonetic-details');
+                if (!existingDetails) { // 只在第一次展开时加载
+                    getWordPhonetics(word).then(phonetics => {
+                        if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
+                            const phoneticDetails = document.createElement('div');
+                            phoneticDetails.className = 'phonetic-details flex items-center gap-1';
+                            if (phonetics.phonetic) {
+                                const phoneticEl = document.createElement('span');
+                                phoneticEl.className = 'phonetic-text text-sm';
+                                phoneticEl.textContent = `[${phonetics.phonetic}]`;
+                                phoneticDetails.appendChild(phoneticEl);
+                            }
+                            if (phonetics.audioUrl) {
+                                const audioBtn = document.createElement('button');
+                                audioBtn.className = 'audio-btn';
+                                audioBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>`;
+                                audioBtn.onclick = (e) => {
+                                    e.preventDefault(); e.stopPropagation();
+                                    new Audio(phonetics.audioUrl).play().catch(err => console.error(err));
+                                };
+                                phoneticDetails.appendChild(audioBtn);
+                            }
+                            summaryContent.appendChild(phoneticDetails);
+                        }
+                    });
+                }
+            }
+        });
         
         const meaningsList = document.createElement('ul');
         meaningsList.className = 'pl-6 mt-1 space-y-1';
