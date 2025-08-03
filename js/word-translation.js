@@ -12,8 +12,8 @@ const translationState = {
     tooltipVisible: false,
     debounceTimer: null,
     lastSelectionRect: null, // 保存最后一次选中文本的位置
+    lastSelectionRange: null, // 保存最后一次选择的 Range 对象
     resizeTimer: null,
-    scrollTimer: null,
     // 新增：选择检查相关状态
     selectionCheckTimer: null,
     lastCheckedSelection: '',
@@ -185,15 +185,23 @@ async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
 
-    // 获取选中文本的位置信息
-    const selectionRect = getSelectionPosition();
-    if (!selectionRect) {
-        console.warn('无法获取选中文本位置');
+    // 获取选中文本的位置和范围信息
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) {
+        console.warn('无法获取选中文本范围');
+        return;
+    }
+    const range = selection.getRangeAt(0);
+    const selectionRect = range.getBoundingClientRect();
+
+    // 如果选区没有尺寸，则不显示悬浮框（例如，只是一个光标）
+    if (selectionRect.width === 0 && selectionRect.height === 0) {
         return;
     }
 
-    // 保存选中文本位置，用于窗口变化时重新定位
+    // 保存选中文本位置和范围，用于窗口变化时重新定位
     translationState.lastSelectionRect = selectionRect;
+    translationState.lastSelectionRange = range.cloneRange();
 
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
@@ -705,6 +713,7 @@ function hideTooltip() {
         
         translationState.currentTooltip = null;
         translationState.tooltipVisible = false;
+        translationState.lastSelectionRange = null;
     }
 }
 
@@ -725,56 +734,66 @@ function handleKeyDown(event) {
 
 // 处理窗口大小变化事件
 function handleWindowResize() {
-    if (!translationState.tooltipVisible || !translationState.currentTooltip || !translationState.lastSelectionRect) {
+    if (!translationState.tooltipVisible || !translationState.currentTooltip) {
         return;
     }
-    
-    // 清除之前的定时器
+
+    // 防抖处理，避免频繁重新定位
     if (translationState.resizeTimer) {
         clearTimeout(translationState.resizeTimer);
     }
-    
-    // 防抖处理，避免频繁重新定位
+
     translationState.resizeTimer = setTimeout(() => {
-        if (translationState.tooltipVisible && translationState.currentTooltip) {
-            // 重新获取选中文本位置（可能因为窗口变化而改变）
-            const currentSelectionRect = getSelectionPosition();
-            if (currentSelectionRect) {
-                translationState.lastSelectionRect = currentSelectionRect;
-                positionTooltip(translationState.currentTooltip, currentSelectionRect);
-            } else if (translationState.lastSelectionRect) {
-                // 如果无法获取当前选中位置，使用保存的位置
-                positionTooltip(translationState.currentTooltip, translationState.lastSelectionRect);
+        if (!translationState.tooltipVisible || !translationState.currentTooltip) {
+            return;
+        }
+
+        if (translationState.lastSelectionRange) {
+            const currentRect = translationState.lastSelectionRange.getBoundingClientRect();
+            
+            if (currentRect.width === 0 && currentRect.height === 0) {
+                hideTooltip();
+                return;
             }
+
+            translationState.lastSelectionRect = currentRect;
+            positionTooltip(translationState.currentTooltip, currentRect);
+        } else if (translationState.lastSelectionRect) {
+            // 备用方案，使用最后一次的 rect，虽然可能不准，但比直接隐藏好
+            positionTooltip(translationState.currentTooltip, translationState.lastSelectionRect);
         }
     }, 150);
 }
 
 // 处理页面滚动事件
 function handleWindowScroll() {
-    if (!translationState.tooltipVisible || !translationState.currentTooltip || !translationState.lastSelectionRect) {
+    if (!translationState.tooltipVisible || !translationState.currentTooltip) {
         return;
     }
-    
-    // 清除之前的定时器
-    if (translationState.scrollTimer) {
-        clearTimeout(translationState.scrollTimer);
-    }
-    
-    // 防抖处理，避免频繁重新定位
-    translationState.scrollTimer = setTimeout(() => {
-        if (translationState.tooltipVisible && translationState.currentTooltip) {
-            // 重新获取选中文本位置（滚动后位置会改变）
-            const currentSelectionRect = getSelectionPosition();
-            if (currentSelectionRect) {
-                translationState.lastSelectionRect = currentSelectionRect;
-                positionTooltip(translationState.currentTooltip, currentSelectionRect);
-            } else {
-                // 如果选中文本已经不可见（滚动出视口），隐藏悬浮框
-                hideTooltip();
-            }
+
+    // 使用 requestAnimationFrame 优化滚动性能
+    window.requestAnimationFrame(() => {
+        if (!translationState.tooltipVisible || !translationState.currentTooltip) {
+            return;
         }
-    }, 100);
+
+        // 优先使用保存的 range 对象来获取最新位置
+        if (translationState.lastSelectionRange) {
+            const currentRect = translationState.lastSelectionRange.getBoundingClientRect();
+            
+            // 如果元素已经滚动出视口（宽度和高度都为0），则隐藏悬浮框
+            if (currentRect.width === 0 && currentRect.height === 0) {
+                hideTooltip();
+                return;
+            }
+            
+            translationState.lastSelectionRect = currentRect;
+            positionTooltip(translationState.currentTooltip, currentRect);
+        } else {
+            // 备用方案：如果无法获取位置，则隐藏
+            hideTooltip();
+        }
+    });
 }
 
 // 处理重试翻译
