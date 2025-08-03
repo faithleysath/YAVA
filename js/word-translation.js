@@ -94,10 +94,11 @@ function handleTextSelection(event) {
 
 // 处理选择变化事件（移动端专用）
 function handleSelectionChange() {
-    if (!isMobileDevice() || translationState.isCheckingSelection) {
+    // 如果工具提示可见或正在检查选择，则不执行任何操作
+    if (translationState.tooltipVisible || !isMobileDevice() || translationState.isCheckingSelection) {
         return;
     }
-    
+
     // 如果没有正在进行的检查，启动检查
     if (!translationState.selectionCheckTimer) {
         startSelectionCheck();
@@ -183,28 +184,33 @@ function isValidWord(text) {
 async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
-    
+
     // 获取选中文本的位置信息
     const selectionRect = getSelectionPosition();
     if (!selectionRect) {
         console.warn('无法获取选中文本位置');
         return;
     }
-    
+
     // 保存选中文本位置，用于窗口变化时重新定位
     translationState.lastSelectionRect = selectionRect;
-    
+
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
-    
+
     // 先设置为不可见，避免闪烁
     tooltip.style.visibility = 'hidden';
     tooltip.style.position = 'absolute';
-    
+
     document.body.appendChild(tooltip);
     translationState.currentTooltip = tooltip;
     translationState.tooltipVisible = true;
-    
+
+    // 在移动设备上，显示工具提示后立即清除文本选择
+    if (isMobileDevice()) {
+        window.getSelection().removeAllRanges();
+    }
+
     // 显示加载状态
     showLoadingState(tooltip);
     
