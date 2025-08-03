@@ -1,17 +1,14 @@
 {
-  "name": "yava-word-learner",
-  "version": "1.0.0",
-  "description": "AI Word Learner with self-hosted dictionary API",
+  "name": "yava-word-learner-with-kv",
+  "version": "1.1.0",
+  "description": "AI Word Learner with self-hosted dictionary API and KV Caching",
   "main": "index.html",
   "scripts": {
-    "start": "echo \"This is a static site, no start script needed. API is handled by Vercel.\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Laysath",
   "license": "MIT",
   "dependencies": {
-    "jsdom": "^15.2.1",
-    "lodash": "^4.17.20",
-    "node-fetch": "^2.6.0"
+    "@vercel/kv": "^1.0.1"
   }
 }
