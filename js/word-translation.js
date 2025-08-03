@@ -591,29 +591,45 @@ function displayTranslationResult(tooltip, result) {
         if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
             const detailsContainer = document.createElement('div');
             detailsContainer.className = 'flex items-center gap-2 ml-2';
+
+            // 定义统一的播放函数
+            const playAudio = (e) => {
+                e.stopPropagation();
+                if (!phonetics.audioUrl) {
+                    showToast('没有可用的发音', 'info');
+                    return;
+                }
+                try {
+                    const audio = new Audio(phonetics.audioUrl);
+                    audio.play().catch(err => console.error("音频播放失败:", err));
+                } catch (err) {
+                    console.error("创建音频对象失败:", err);
+                    showToast('无法播放音频文件', 'error');
+                }
+            };
+
             if (phonetics.phonetic) {
                 const phoneticEl = document.createElement('span');
                 phoneticEl.className = 'phonetic-text text-sm';
                 phoneticEl.textContent = `[${phonetics.phonetic}]`;
+                // 如果有音频，则添加点击事件和样式
+                if (phonetics.audioUrl) {
+                    phoneticEl.style.cursor = 'pointer';
+                    phoneticEl.title = '点击播放发音';
+                    phoneticEl.addEventListener('click', playAudio);
+                }
                 detailsContainer.appendChild(phoneticEl);
             }
+
             if (phonetics.audioUrl) {
                 const audioBtn = document.createElement('button');
                 audioBtn.className = 'audio-btn';
                 audioBtn.title = '播放发音';
                 audioBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>`;
-                audioBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    try {
-                        const audio = new Audio(phonetics.audioUrl);
-                        audio.play().catch(err => console.error("音频播放失败:", err));
-                    } catch (err) {
-                        console.error("创建音频对象失败:", err);
-                        showToast('无法播放音频文件', 'error');
-                    }
-                };
+                audioBtn.addEventListener('click', playAudio);
                 detailsContainer.appendChild(audioBtn);
             }
+            
             // 插入到单词和重试按钮之间
             wordHeader.insertBefore(detailsContainer, retryButton);
         }
