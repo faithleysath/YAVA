@@ -544,32 +544,43 @@ async function getTranslation(word) {
 2.  **有效性检查**：如果这不是一个有效的英文单词或词组，请在 "error" 字段中说明。
 3.  **提供完整信息**：
     *   **词性 (partOfSpeech)**: 如果是单词，列出所有词性 (如: n./v./adj.)；如果是词组，可以返回 "词组" 或留空。
-    *   **所有含义 (allMeanings)**: 提供所有不同的中文含义，用分号分隔。确保含义不重复且按重要性排序。
+    *   **所有含义 (allMeanings)**: 提供核心且显著不同的中文含义，用分号分隔。避免同义词或近义词。确保含义按重要性排序。
     *   **考研高频考法 (examUsage)**: 描述其在考试中的常见用法或搭配。
     *   **自测例句 (exampleSentence)**: 提供一个能体现其核心用法的英文例句。
     *   **巧记方法 (memoryTip)**: 提供一个有创意的记忆技巧。
 
-**示例 1 (单词):**
+---
+**示例学习**
+
+**反例 (错误示范):**
 {
-  "word": "embed",
-  "partOfSpeech": "v.",
-  "allMeanings": "嵌入；植入",
-  "examUsage": "科技、文化类文章，如embed technology（嵌入技术）、embed in culture（融入文化）",
-  "exampleSentence": "The reporter was embedded with the troops.",
-  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入。",
+  "word": "tangible",
+  "allMeanings": "看得见的; 摸得着的; 实在的"
+}
+*评价：错误，含义重复，不够精炼。*
+
+**正例 (正确示范):**
+{
+  "word": "tangible",
+  "partOfSpeech": "adj.",
+  "allMeanings": "有形的；明确的；真实的",
+  "examUsage": "常用来描述可感知、可证明的事物，与 intangible (无形的) 相对。常见搭配：tangible assets (有形资产)、tangible evidence (确凿证据)、tangible benefits (实际的好处)。",
+  "exampleSentence": "The company has shown tangible progress in improving its customer service.",
+  "memoryTip": "tang (接触, 联想touch) + ible (可以的) = 可以接触的，即有形的、真实的。",
   "error": null
 }
 
-**示例 2 (词组):**
+**正例 (多义词):**
 {
-  "word": "working class",
-  "partOfSpeech": "词组",
-  "allMeanings": "工人阶级；劳动阶层",
-  "examUsage": "常用于社会、经济类话题，讨论社会结构和阶级关系。",
-  "exampleSentence": "The novel accurately depicts the struggles of the working class during that era.",
-  "memoryTip": "working (工作的) + class (阶级) = 工人阶级。",
+  "word": "run",
+  "partOfSpeech": "v./n.",
+  "allMeanings": "v. 跑；经营；运转; n. 跑步；连续的演出",
+  "examUsage": "作为动词，常考“经营管理”之意，如 run a company；作为名词，常指“连续的一段时间”。",
+  "exampleSentence": "She decided to run her own business after graduating.",
+  "memoryTip": "想象一个人为了“经营(run)”公司到处“跑(run)”。",
   "error": null
 }
+---
 
 **输出格式要求:**
 请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
