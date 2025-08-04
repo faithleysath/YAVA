@@ -33,6 +33,17 @@ let presetApiKeys = {
 // 当前选中的预设
 let currentPreset = 'gemini';
 
+// 初始化时添加点击外部关闭的监听器
+document.addEventListener('DOMContentLoaded', () => {
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeSettingsModal();
+            }
+        });
+    }
+});
+
 export function openSettingsModal() {
     // 根据当前预设加载对应的API Key
     apiKeyInput.value = presetApiKeys[currentPreset] || '';
@@ -40,11 +51,18 @@ export function openSettingsModal() {
     modelNameInput.value = apiSettings.modelName;
     updatePresetButtons(); // This will also set the initial disabled state
     updateApiKeyHint(currentPreset); // 更新API Key提示信息
-    settingsModal.style.display = 'flex';
+    
+    settingsModal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        settingsModal.classList.add('show');
+    });
 }
 
 export function closeSettingsModal() {
-    settingsModal.style.display = 'none';
+    settingsModal.classList.remove('show');
+    setTimeout(() => {
+        settingsModal.classList.add('hidden');
+    }, 200); // Match transition duration
 }
 
 export function saveSettings() {

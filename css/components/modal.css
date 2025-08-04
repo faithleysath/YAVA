@@ -1,0 +1,41 @@
+/* --- 设置模态框动画 --- */
+#settings-modal {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+#settings-modal.show {
+    opacity: 1;
+}
+
+#settings-modal .bg-white {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+#settings-modal.show .bg-white {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* --- 查词模态框动画 --- */
+#query-modal {
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+}
+
+#query-modal.show {
+    opacity: 1;
+}
+
+#query-modal-content {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+#query-modal.show #query-modal-content {
+    transform: scale(1);
+    opacity: 1;
+}

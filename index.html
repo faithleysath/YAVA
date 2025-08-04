@@ -32,6 +32,10 @@
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
     <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/toast.css">
+    <link rel="stylesheet" href="css/components/tooltip.css">
+    <link rel="stylesheet" href="css/components/modal.css">
+    <link rel="stylesheet" href="css/components/main-components.css">
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -240,7 +244,7 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md m-2 sm:m-4">
             <h2 class="text-2xl font-bold mb-6">API 设置</h2>
             <div class="space-y-4">
@@ -284,9 +288,27 @@
 
     <script type="module" src="js/vocabulary-book.js"></script>
     <script type="module" src="js/shortcuts.js"></script>
+    <script type="module" src="js/query.js"></script>
     <script type="module" src="js/main.js"></script>
 
-    <!-- Duplicated settings modal removed -->
+    <!-- 自由查词浮动按钮和模态框 -->
+    <button id="open-query-modal-btn" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform hover:scale-110" title="自由查词 (/)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+
+    <div id="query-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 hidden">
+        <div id="query-modal-content" class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4">自由查词</h2>
+                <div class="relative">
+                    <input type="text" id="query-input" class="w-full p-3 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="输入单词或词组...">
+                    <button id="query-button" class="absolute inset-y-0 right-0 flex items-center justify-center w-12 h-full text-blue-600 hover:text-blue-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

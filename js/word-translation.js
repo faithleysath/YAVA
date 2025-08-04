@@ -174,7 +174,7 @@ function stopSelectionCheck() {
 }
 
 // 验证是否为有效的英文单词或词组
-function isValidWord(text) {
+export function isValidWord(text) {
     // 允许字母和空格，长度在2到50之间，不能以空格开头或结尾
     if (text.length < 2 || text.length > 50) {
         return false;
@@ -184,27 +184,32 @@ function isValidWord(text) {
 }
 
 // 显示翻译悬浮框
-async function showTranslationTooltip(word, event) {
+export async function showTranslationTooltip(word, event) {
     // 如果已经有悬浮框显示，先隐藏
     hideTooltip();
 
-    // 获取选中文本的位置和范围信息
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) {
-        console.warn('无法获取选中文本范围');
-        return;
-    }
-    const range = selection.getRangeAt(0);
-    const selectionRect = range.getBoundingClientRect();
+    let selectionRect = null;
+    const isFreeQuery = !event;
 
-    // 如果选区没有尺寸，则不显示悬浮框（例如，只是一个光标）
-    if (selectionRect.width === 0 && selectionRect.height === 0) {
-        return;
-    }
+    if (!isFreeQuery) {
+        // 获取选中文本的位置和范围信息
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) {
+            console.warn('无法获取选中文本范围');
+            return;
+        }
+        const range = selection.getRangeAt(0);
+        selectionRect = range.getBoundingClientRect();
 
-    // 保存选中文本位置和范围，用于窗口变化时重新定位
-    translationState.lastSelectionRect = selectionRect;
-    translationState.lastSelectionRange = range.cloneRange();
+        // 如果选区没有尺寸，则不显示悬浮框（例如，只是一个光标）
+        if (selectionRect.width === 0 && selectionRect.height === 0) {
+            return;
+        }
+
+        // 保存选中文本位置和范围，用于窗口变化时重新定位
+        translationState.lastSelectionRect = selectionRect;
+        translationState.lastSelectionRange = range.cloneRange();
+    }
 
     // 创建悬浮框元素
     const tooltip = createTooltipElement(word);
@@ -227,7 +232,15 @@ async function showTranslationTooltip(word, event) {
     
     // 等待DOM渲染完成后再定位
     requestAnimationFrame(() => {
-        positionTooltip(tooltip, selectionRect);
+        if (isFreeQuery) {
+            // 自由查询模式，居中显示
+            tooltip.style.position = 'fixed';
+            tooltip.style.top = '50%';
+            tooltip.style.left = '50%';
+            tooltip.style.transform = 'translate(-50%, -50%)';
+        } else {
+            positionTooltip(tooltip, selectionRect);
+        }
         tooltip.style.visibility = 'visible';
     });
     
@@ -240,9 +253,11 @@ async function showTranslationTooltip(word, event) {
             displayTranslationResult(tooltip, translationResult);
             
             // 内容更新后重新定位
-            requestAnimationFrame(() => {
-                positionTooltip(tooltip, selectionRect);
-            });
+            if (!isFreeQuery) {
+                requestAnimationFrame(() => {
+                    positionTooltip(tooltip, selectionRect);
+                });
+            }
         }
     } catch (error) {
         console.error('翻译失败:', error);

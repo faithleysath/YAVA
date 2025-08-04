@@ -1,0 +1,92 @@
+.word-item-mastered { color: #16a34a; }
+.word-item-in-progress { color: #f59e0b; }
+.meaning-item-mastered { color: #16a34a; text-decoration: line-through; }
+
+.cloze-option-btn {
+    background-color: white;
+    border: 1px solid #cbd5e1;
+    transition: all 0.2s;
+}
+.cloze-option-btn:hover {
+    background-color: #f1f5f9;
+    border-color: #3b82f6;
+}
+.cloze-option-btn.correct {
+    background-color: #dcfce7;
+    border-color: #22c55e;
+    color: #166534;
+}
+.cloze-option-btn.incorrect {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+/* 音标和发音按钮样式 */
+.phonetic-text {
+    font-size: 1.1rem;
+    color: #64748b; /* slate-500 */
+}
+
+.audio-btn {
+    cursor: pointer;
+    color: #64748b; /* slate-500 */
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.audio-btn:hover {
+    color: #3b82f6; /* blue-600 */
+}
+
+/* 词表卡片样式 */
+.wordlist-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.wordlist-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.wordlist-card:hover::before {
+    transform: scaleX(1);
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .wordlist-card {
+        padding: 1rem;
+    }
+
+    /* 当单词列表为空时，在移动端减小其高度 */
+    #word-list-container:has(> p:only-child) {
+        height: auto;
+        min-height: 5rem; /* 保持一个最小高度 */
+    }
+}
+
+/* 生词本样式 */
+.vocab-item .vocab-delete-btn {
+    transition: opacity 0.2s ease-in-out, background-color 0.2s;
+}

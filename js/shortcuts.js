@@ -13,11 +13,19 @@ export function initShortcuts() {
 
         const isSubmitKey = (e.key === 'Enter' && (e.metaKey || e.ctrlKey));
 
-        if (isInput && !isSubmitKey) {
+        if (isInput && !isSubmitKey && e.key !== '/') {
             return;
         }
 
         // 全局快捷键
+        if (e.key === '/' && !isInput) {
+            e.preventDefault();
+            if (window.openQueryModal) {
+                window.openQueryModal();
+            }
+            return;
+        }
+
         if (e.key.toLowerCase() === 's' && !isInput) {
             e.preventDefault();
             const settingsModal = document.getElementById('settings-modal');
