@@ -63,26 +63,35 @@ export function initShortcuts() {
 function handleLearningViewShortcuts(e) {
     const feedbackVisible = document.getElementById('feedback-container').style.display !== 'none';
 
+    // 卫语句：处理提交操作
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        // If feedback is not visible, it's the input phase, submit translation
         if (!feedbackVisible) {
             const submitButton = document.querySelector('#challenge-container button[onclick="submitTranslation()"]');
             if (submitButton) submitButton.click();
         }
-    } else if (feedbackVisible) {
-        // If feedback is visible, handle continue or retry
-        if (e.key === 'Enter' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            const actionButtons = document.querySelectorAll('#feedback-actions button');
-            const continueButton = Array.from(actionButtons).find(btn => btn.textContent === '继续');
-            if (continueButton) continueButton.click();
-        } else if (e.key.toLowerCase() === 'r') {
-            e.preventDefault();
-            const actionButtons = document.querySelectorAll('#feedback-actions button');
-            const retryButton = Array.from(actionButtons).find(btn => btn.textContent === '再试一次');
-            if (retryButton) retryButton.click();
-        }
+        return;
+    }
+
+    // 如果反馈区不可见，则后续快捷键无效
+    if (!feedbackVisible) {
+        return;
+    }
+
+    // 卫语句：处理“继续”
+    if (e.key === 'Enter' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const continueButton = document.querySelector('#feedback-actions button.bg-blue-600'); // 更精确的选择器
+        if (continueButton) continueButton.click();
+        return;
+    }
+
+    // 卫语句：处理“再试一次”
+    if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        const retryButton = document.querySelector('#feedback-actions button.bg-yellow-500'); // 更精确的选择器
+        if (retryButton) retryButton.click();
+        return;
     }
 }
 
