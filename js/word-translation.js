@@ -58,6 +58,11 @@ export function initWordTranslation() {
 
 // 处理文本选择事件
 function handleTextSelection(event) {
+    // 如果点击发生在当前悬浮框内部，则不执行任何操作
+    if (translationState.currentTooltip && translationState.currentTooltip.contains(event.target)) {
+        return;
+    }
+    
     // 停止之前的选择检查
     stopSelectionCheck();
     
