@@ -93,9 +93,23 @@ async function startLearningMeaning() {
 
     challengeSentenceEl.innerHTML = `<div class="flex items-center"><div class="loader !w-6 !h-6 !border-2"></div><p class="ml-3 text-slate-500">AI 正在生成新例句...</p></div>`;
 
-    const genPrompt = `任务：为单词 "${word}" 生成一个能清晰体现其 "${currentMeaning}" 含义的英文例句。
-输出格式要求：请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
-{ "sentence": "An English sentence that uses the word correctly." }`;
+    const genPrompt = `你是一位为高级英语学习者设计课程的专家。
+
+**任务:**
+为学习单词 "${word}"，请生成一个高质量的英文例句，这个例句必须精准且清晰地展示其 "${currentMeaning}" 这个特定释义。
+
+**核心要求:**
+1.  **精准聚焦 (Precision Focus):** 例句的核心目的，是让学习者在没有额外上下文的情况下，也能清晰地理解 "${word}" 在此处表达的正是 "${currentMeaning}" 的意思。句子本身就应是最好的线索。
+2.  **自然地道 (Natural & Idiomatic):** 例句必须听起来自然，符合英语母语者的日常表达习惯，避免生硬或不常见的用法。
+3.  **复杂度适中 (Appropriate Complexity):** 句子结构不应过于简单，也不应过分复杂。它应该是一个能体现该词用法的典型、优质例句，适合考有同等水平的学习者。
+4.  **独立完整 (Self-Contained):** 例句本身应包含足够的信息来理解其含义，不应依赖于某个特定的、未说明的故事情节或背景。
+
+**输出格式要求:**
+请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
+
+{
+  "sentence": "A high-quality, natural-sounding English sentence that perfectly illustrates the intended meaning."
+}`;
     
     const response = await callLLM(genPrompt, { useGlobalLoader: false });
     
@@ -115,10 +129,10 @@ export async function submitTranslation() {
     const word = appState.currentWord['单词'];
 
     const currentMeaning = (appState.currentWord['常见含义'] || '').split(/;|；/)[appState.currentMeaningIndex].trim();
-    const prompt = `你是一位专业的双语翻译老师，你的任务是评估用户将一个英文句子翻译成中文的质量。
+    const prompt = `你是一位顶级的双语翻译专家和语言导师，你的任务是像一位严格而富有洞察力的老师一样，评估用户将一个英文句子翻译成中文的质量。
 
 **任务:**
-请根据以下信息和评分标准，评估用户的翻译，并提供详细、有建设性的反馈。
+请根据以下信息、核心原则和评分标准，对用户的翻译进行严格评估，并提供精准、有深度、有建设性的反馈。
 
 **背景信息:**
 - 学习单词: "${word}"
@@ -126,22 +140,28 @@ export async function submitTranslation() {
 - 原始英文例句: "${originalSentence}"
 - 用户的中文翻译: "${userTranslation}"
 
-**重要规则:**
-- **用户的输入必须是中文翻译。** 如果用户直接提交了原始的英文句子，或提交了非中文内容，请直接给出 1 分，并在 "evaluation" 中明确指出“输入无效，请输入中文翻译。”，无需提供其他反馈。
+**核心评估原则:**
+1.  **词义精准度 (Precision):** 评估的重中之重。不仅要看字面意思，更要深入考察翻译是否精准地传达了单词在特定语境下的**深层含义、微妙差别和情感色彩**。
+    - *反例*: 对于 "inner turmoil"，翻译成 "内在混乱" 只能算勉强及格，因为它丢失了 "turmoil" 所蕴含的 "挣扎"、"痛苦" 和 "动荡" 的感觉。更精准的翻译是 "内心挣扎" 或 "内心煎熬"。
+2.  **语境契合度 (Contextual Fit):** 评估翻译是否与整个句子的语境、语气和风格完美融合。
+3.  **语言自然度 (Idiomaticity):** 评估翻译是否符合中文的表达习惯，读起来是否流畅、地道，要坚决避免生硬的“翻译腔”。
 
 **评分标准 (1-5分):**
-- 5分 (完美): 翻译准确无误，完全传达了核心词义和原文语境，语言流畅、地道。
-- 4分 (良好): 准确传达了核心词义，但存在少量不影响理解的瑕疵，如用词不够精准或句式稍显生硬。
-- 3分 (及格): 基本理解了核心词义，但翻译存在明显错误或不通顺之处。
-- 2分 (较差): 对核心词义有较大误解，翻译存在严重语法错误或与原文意思偏差较大。
-- 1分 (完全错误): 完全没有理解核心词义，或提交了无效输入（如原文）。
+- **5分 (卓越):** 翻译精准、优雅、地道。不仅完美传达了原文的所有信息和微妙情感，而且语言表达优美自然，堪称典范。对核心词的理解和运用出神入化。
+- **4分 (良好):** 准确传达了核心词义和句子大意，但在词语的精妙选择或句式流畅度上略有欠缺。整体质量高，但离完美还有一小步。
+- **3分 (及格):** 基本传达了核心词义，但翻译存在一些不够精准或生硬的地方（例如出现“翻译腔”），或者对句子部分细节有误解。读者能理解大意，但能明显感觉到是翻译。
+- **2分 (较差):** 对核心词义有较大误解，或翻译存在严重错误，导致句子意思被扭曲。
+- **1分 (错误):** 完全没理解核心词义，或提交了无效内容（如原文、非中文等）。
+
+**重要规则:**
+- 如果用户提交了非中文内容，请直接给出 1 分，并在 "evaluation" 中明确指出“输入无效，请输入中文翻译。”，无需提供其他反馈。
 
 **评估要求:**
 1.  **评分 (score):** 根据上述标准，给出1-5分的整数评分。
-2.  **核心评估 (evaluation):** 简要说明用户的翻译在多大程度上准确传达了 "${word}" 的 "${currentMeaning}" 这个核心意思。
-3.  **优点 (strengths):** 指出翻译中的亮点（如果翻译质量尚可）。
-4.  **改进建议 (suggestions):** 提出具体的改进建议，帮助用户理解错误并提升。
-5.  **参考翻译 (model_translation):** 提供一个或两个高质量的参考翻译。
+2.  **核心评估 (evaluation):** 一句话精准总结翻译的质量，点出主要问题或亮点。
+3.  **优点 (strengths):** 实事求是地指出翻译中的亮点（如果存在）。如果翻译质量低于3分，此项可省略或指出最基本的优点。
+4.  **改进建议 (suggestions):** 提出具体、可操作的改进建议。要解释**为什么**要这样改，帮助用户理解背后的语言逻辑。
+5.  **参考翻译 (model_translation):** 提供一到两个高质量的参考翻译，展示不同的地道表达方式。
 
 **输出格式要求:**
 请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
@@ -259,9 +279,23 @@ async function prefetchNextLearningItem() {
     const nextWordObj = appState.allWords.find(w => w['单词'] === nextWord);
     const nextMeaning = (nextWordObj['常见含义'] || '').split(/;|；/).map(m => m.trim()).filter(Boolean)[nextMeaningIndex];
 
-    const genPrompt = `任务：为单词 "${nextWord}" 生成一个能清晰体现其 "${nextMeaning}" 含义的英文例句。
-输出格式要求：请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
-{ "sentence": "An English sentence that uses the word correctly." }`;
+    const genPrompt = `你是一位为高级英语学习者设计课程的专家。
+
+**任务:**
+为学习单词 "${nextWord}"，请生成一个高质量的英文例句，这个例句必须精准且清晰地展示其 "${nextMeaning}" 这个特定释义。
+
+**核心要求:**
+1.  **精准聚焦 (Precision Focus):** 例句的核心目的，是让学习者在没有额外上下文的情况下，也能清晰地理解 "${nextWord}" 在此处表达的正是 "${nextMeaning}" 的意思。句子本身就应是最好的线索。
+2.  **自然地道 (Natural & Idiomatic):** 例句必须听起来自然，符合英语母语者的日常表达习惯，避免生硬或不常见的用法。
+3.  **复杂度适中 (Appropriate Complexity):** 句子结构不应过于简单，也不应过分复杂。它应该是一个能体现该词用法的典型、优质例句，适合考有同等水平的学习者。
+4.  **独立完整 (Self-Contained):** 例句本身应包含足够的信息来理解其含义，不应依赖于某个特定的、未说明的故事情节或背景。
+
+**输出格式要求:**
+请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
+
+{
+  "sentence": "A high-quality, natural-sounding English sentence that perfectly illustrates the intended meaning."
+}`;
 
     const response = await callLLM(genPrompt, { useGlobalLoader: false, retries: 1 });
     if (response && response.sentence) {
