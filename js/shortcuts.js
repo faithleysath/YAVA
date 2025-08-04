@@ -81,7 +81,7 @@ function handleLearningViewShortcuts(e) {
     // 卫语句：处理“继续”
     if (e.key === 'Enter' || e.key === 'ArrowRight') {
         e.preventDefault();
-        const continueButton = document.querySelector('#feedback-actions button.bg-blue-600'); // 更精确的选择器
+        const continueButton = document.getElementById('continue-button');
         if (continueButton) continueButton.click();
         return;
     }
@@ -89,7 +89,7 @@ function handleLearningViewShortcuts(e) {
     // 卫语句：处理“再试一次”
     if (e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        const retryButton = document.querySelector('#feedback-actions button.bg-yellow-500'); // 更精确的选择器
+        const retryButton = document.getElementById('retry-button');
         if (retryButton) retryButton.click();
         return;
     }

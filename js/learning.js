@@ -253,6 +253,7 @@ export async function submitTranslation() {
     // Add "Try Again" button if score is not perfect
     if (response.score < 5) {
         const retryBtn = document.createElement('button');
+        retryBtn.id = 'retry-button'; // 添加 ID
         retryBtn.addEventListener('click', retryChallenge);
         retryBtn.title = '再试一次';
         retryBtn.className = 'bg-yellow-500 text-white py-2 px-6 rounded-lg hover:bg-yellow-600 transition-colors font-bold mr-4';
@@ -263,6 +264,7 @@ export async function submitTranslation() {
 
     // Add "Continue" button
     const continueBtn = document.createElement('button');
+    continueBtn.id = 'continue-button'; // 添加 ID
     continueBtn.addEventListener('click', nextStep);
     continueBtn.title = '继续 (Enter)';
     continueBtn.className = 'bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-bold';
