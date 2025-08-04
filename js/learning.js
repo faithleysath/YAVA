@@ -66,7 +66,9 @@ async function startLearningMeaning() {
     
     document.getElementById('challenge-container').style.display = 'block';
     document.getElementById('feedback-container').style.display = 'none';
-    document.getElementById('translation-input').value = '';
+    const translationInput = document.getElementById('translation-input');
+    translationInput.value = '';
+    setTimeout(() => translationInput.focus(), 100); // 延迟聚焦以确保元素可见
 
     const challengeSentenceEl = document.getElementById('challenge-sentence');
     const prefetchKey = getLearningPrefetchKey(word, appState.currentMeaningIndex);

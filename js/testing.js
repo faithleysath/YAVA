@@ -78,6 +78,7 @@ async function loadTestQuestion() {
                         <p class="text-sm font-semibold text-slate-500 pt-2">请在下方造出你自己的句子：</p>
                     </div>`;
                 answerArea.innerHTML = `<textarea id="test-answer-input" class="w-full p-3 border border-slate-300 rounded-lg" rows="4" placeholder="在这里输入你的句子..."></textarea><button onclick="submitTestAnswer()" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-lg">提交答案</button>`;
+                setTimeout(() => document.getElementById('test-answer-input')?.focus(), 100);
             }
             break;
         case 'reverse-translation':
@@ -85,6 +86,7 @@ async function loadTestQuestion() {
             if (data.question) {
                 questionText = data.question;
                 answerArea.innerHTML = `<textarea id="test-answer-input" class="w-full p-3 border border-slate-300 rounded-lg" rows="4" placeholder="在这里输入你的翻译..."></textarea><button onclick="submitTestAnswer()" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-lg">提交答案</button>`;
+                setTimeout(() => document.getElementById('test-answer-input')?.focus(), 100);
             }
             break;
         case 'cloze-test':
