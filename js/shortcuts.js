@@ -1,6 +1,5 @@
 import { appState } from './state.js';
 import { switchView } from './ui.js';
-import { submitTranslation, nextStep } from './learning.js';
 import { submitTestAnswer, nextTestQuestion } from './testing.js';
 import { openSettingsModal, closeSettingsModal, saveSettings } from './settings.js';
 import { hideTooltip } from './word-translation.js';
@@ -66,17 +65,23 @@ function handleLearningViewShortcuts(e) {
 
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        // 如果反馈区不可见，说明在输入阶段，提交翻译
+        // If feedback is not visible, it's the input phase, submit translation
         if (!feedbackVisible) {
-            const submitButton = document.querySelector('#learning-view button[onclick="submitTranslation()"]');
+            const submitButton = document.querySelector('#challenge-container button[onclick="submitTranslation()"]');
             if (submitButton) submitButton.click();
         }
-    } else if (e.key === 'Enter' || e.key === 'ArrowRight') {
-        // 如果反馈区可见，说明在反馈阶段，进入下一步
-        if (feedbackVisible) {
+    } else if (feedbackVisible) {
+        // If feedback is visible, handle continue or retry
+        if (e.key === 'Enter' || e.key === 'ArrowRight') {
             e.preventDefault();
-            const nextButton = document.querySelector('#learning-view button[onclick="nextStep()"]');
-            if (nextButton) nextButton.click();
+            const actionButtons = document.querySelectorAll('#feedback-actions button');
+            const continueButton = Array.from(actionButtons).find(btn => btn.textContent === '继续');
+            if (continueButton) continueButton.click();
+        } else if (e.key.toLowerCase() === 'r') {
+            e.preventDefault();
+            const actionButtons = document.querySelectorAll('#feedback-actions button');
+            const retryButton = Array.from(actionButtons).find(btn => btn.textContent === '再试一次');
+            if (retryButton) retryButton.click();
         }
     }
 }
