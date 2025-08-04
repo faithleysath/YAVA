@@ -173,11 +173,14 @@ function stopSelectionCheck() {
     translationState.lastCheckedSelection = '';
 }
 
-// 验证是否为有效的英文单词
+// 验证是否为有效的英文单词或词组
 function isValidWord(text) {
-    // 检查是否为单个英文单词（只包含字母，长度在1-20之间）
-    const wordRegex = /^[a-zA-Z]{1,20}$/;
-    return wordRegex.test(text);
+    // 允许字母和空格，长度在2到50之间，不能以空格开头或结尾
+    if (text.length < 2 || text.length > 50) {
+        return false;
+    }
+    const phraseRegex = /^[a-zA-Z]+(?:\s[a-zA-Z]+)*$/;
+    return phraseRegex.test(text);
 }
 
 // 显示翻译悬浮框
@@ -514,46 +517,56 @@ async function getTranslation(word) {
         return translationState.translationCache.get(word.toLowerCase());
     }
     
-    const prompt = `请为英文单词 "${word}" 提供详细的翻译信息。
+    const prompt = `请为英文单词或词组 "${word}" 提供详细的翻译信息。
 
 要求：
-1. 如果这不是一个有效的英文单词，请在 "error" 字段中说明
-2. 如果是有效单词，请提供完整的学习信息
-3. 一个单词可能有多种词性，请全部列出（用斜杠分隔，如：n./v./adj.）
-4. 提供该单词的所有不同含义，必须用中文表达，确保每个含义都是真正不同的，不能有意思相近的重复含义
-5. 含义要按重要性和使用频率排序
+1.  **识别类型**：判断输入是单个单词还是一个词组。
+2.  **有效性检查**：如果这不是一个有效的英文单词或词组，请在 "error" 字段中说明。
+3.  **提供完整信息**：
+    *   **词性 (partOfSpeech)**: 如果是单词，列出所有词性 (如: n./v./adj.)；如果是词组，可以返回 "词组" 或留空。
+    *   **所有含义 (allMeanings)**: 提供所有不同的中文含义，用分号分隔。确保含义不重复且按重要性排序。
+    *   **考研高频考法 (examUsage)**: 描述其在考试中的常见用法或搭配。
+    *   **自测例句 (exampleSentence)**: 提供一个能体现其核心用法的英文例句。
+    *   **巧记方法 (memoryTip)**: 提供一个有创意的记忆技巧。
 
-一个示例：
+**示例 1 (单词):**
 {
   "word": "embed",
   "partOfSpeech": "v.",
   "allMeanings": "嵌入；植入",
   "examUsage": "科技、文化类文章，如embed technology（嵌入技术）、embed in culture（融入文化）",
   "exampleSentence": "The reporter was embedded with the troops.",
-  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入，比如钉子嵌入木头像进了床",
+  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入。",
   "error": null
 }
 
-示例分析：
-- "run" 作为动词可以表示"跑步；经营；运行"等完全不同的中文含义
-- "bank" 作为名词可以表示"银行；河岸"等完全不同的中文含义
-- 避免列出意思相近的含义，如"快乐"和"高兴"应该合并为一个含义
+**示例 2 (词组):**
+{
+  "word": "working class",
+  "partOfSpeech": "词组",
+  "allMeanings": "工人阶级；劳动阶层",
+  "examUsage": "常用于社会、经济类话题，讨论社会结构和阶级关系。",
+  "exampleSentence": "The novel accurately depicts the struggles of the working class during that era.",
+  "memoryTip": "working (工作的) + class (阶级) = 工人阶级。",
+  "error": null
+}
 
-输出格式要求：请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记：
+**输出格式要求:**
+请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。
 
 {
   "word": "${word}",
-  "partOfSpeech": "所有词性（用斜杠分隔，如：n./v./adj.）",
-  "allMeanings": "所有不同的中文含义（用分号分隔，确保每个含义都是真正不同的意思）",
-  "examUsage": "考研高频考法，如embed technology（嵌入技术）、embed in culture（融入文化）",
-  "exampleSentence": "The reporter was embedded with the troops.",
-  "memoryTip": "em（进入）+bed（床），嵌入床里，联想嵌入、使融入，比如钉子嵌入木头像进了床",
+  "partOfSpeech": "词性或'词组'",
+  "allMeanings": "所有不同的中文含义（用分号分隔）",
+  "examUsage": "常见用法或搭配",
+  "exampleSentence": "一个高质量的英文例句",
+  "memoryTip": "一个有创意的记忆技巧",
   "error": null
 }
 
-如果单词无效，返回：
+如果输入无效，返回：
 {
-  "error": "这不是一个有效的英文单词"
+  "error": "这不是一个有效的英文单词或词组"
 }`;
 
     try {
@@ -587,9 +600,12 @@ function displayTranslationResult(tooltip, result) {
 
     // 在显示翻译结果的同时，获取音标和发音
     const wordHeader = tooltip.querySelector('.word-tooltip-header');
-    getWordPhonetics(result.word).then(phonetics => {
-        if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
-            const detailsContainer = document.createElement('div');
+    
+    // 如果是词组，则不进行音标查询
+    if (result.word && !result.word.includes(' ')) {
+        getWordPhonetics(result.word).then(phonetics => {
+            if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
+                const detailsContainer = document.createElement('div');
             detailsContainer.className = 'flex items-center gap-2 ml-2';
 
             // 定义统一的播放函数
@@ -630,10 +646,11 @@ function displayTranslationResult(tooltip, result) {
                 detailsContainer.appendChild(audioBtn);
             }
             
-            // 插入到单词和重试按钮之间
-            wordHeader.insertBefore(detailsContainer, retryButton);
-        }
-    });
+                // 插入到单词和重试按钮之间
+                wordHeader.insertBefore(detailsContainer, retryButton);
+            }
+        });
+    }
     
     if (result.error) {
         showErrorState(tooltip, result.error);

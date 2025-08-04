@@ -141,9 +141,11 @@ export function renderWordList() {
             if (event.target.open) {
                 const existingDetails = summaryContent.querySelector('.phonetic-details');
                 if (!existingDetails) { // 只在第一次展开时加载
-                    getWordPhonetics(word).then(phonetics => {
-                        if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
-                            const phoneticDetails = document.createElement('div');
+                    // 如果是词组，则不进行音标查询
+                    if (word && !word.includes(' ')) {
+                        getWordPhonetics(word).then(phonetics => {
+                            if (phonetics && (phonetics.phonetic || phonetics.audioUrl)) {
+                                const phoneticDetails = document.createElement('div');
                             phoneticDetails.className = 'phonetic-details flex items-center gap-1';
                             if (phonetics.phonetic) {
                                 const phoneticEl = document.createElement('span');
@@ -162,8 +164,9 @@ export function renderWordList() {
                                 phoneticDetails.appendChild(audioBtn);
                             }
                             summaryContent.appendChild(phoneticDetails);
-                        }
-                    });
+                            }
+                        });
+                    }
                 }
             }
         });

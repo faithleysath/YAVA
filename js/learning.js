@@ -30,9 +30,12 @@ async function startLearningMeaning() {
 
     const wordDetailsContainer = document.getElementById('learning-word-details');
     wordDetailsContainer.innerHTML = ''; // 清空旧内容
-    getWordPhonetics(word).then(phonetics => {
-        if (phonetics && phonetics.phonetic) {
-            const phoneticEl = document.createElement('span');
+
+    // 如果是词组，则不进行音标查询
+    if (word && !word.includes(' ')) {
+        getWordPhonetics(word).then(phonetics => {
+            if (phonetics && phonetics.phonetic) {
+                const phoneticEl = document.createElement('span');
             phoneticEl.className = 'phonetic-text';
             phoneticEl.textContent = `[${phonetics.phonetic}]`;
             wordDetailsContainer.appendChild(phoneticEl);
@@ -52,8 +55,9 @@ async function startLearningMeaning() {
                 }
             };
             wordDetailsContainer.appendChild(audioBtn);
-        }
-    });
+            }
+        });
+    }
 
     document.getElementById('learning-progress').textContent = `正在学习释义 ${appState.currentMeaningIndex + 1}/${meanings.length}: ${currentMeaning}`;
     
