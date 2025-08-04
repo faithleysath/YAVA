@@ -120,6 +120,12 @@ async function loadTestQuestion() {
     document.getElementById('test-progress').textContent = `第 ${appState.currentTestIndex + 1} / ${appState.testPool.length} 题`;
     document.getElementById('test-question-container').style.display = 'block';
     document.getElementById('test-feedback-container').style.display = 'none';
+
+    // 确保输入框和按钮状态被重置
+    const answerInput = document.getElementById('test-answer-input');
+    if (answerInput) answerInput.disabled = false;
+    const submitButton = document.querySelector('#test-answer-area button');
+    if (submitButton) submitButton.style.display = 'block';
     
     prefetchNextTestItem();
 }
@@ -222,7 +228,11 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
 
     document.getElementById('test-feedback-container').style.display = 'block';
     if (appState.currentTestMode !== 'cloze-test') {
-        document.getElementById('test-answer-area').querySelector('button').style.display = 'none';
+        const answerArea = document.getElementById('test-answer-area');
+        const input = answerArea.querySelector('textarea');
+        const button = answerArea.querySelector('button');
+        if (input) input.disabled = true;
+        if (button) button.style.display = 'none';
     }
 
     let bgColor = '';

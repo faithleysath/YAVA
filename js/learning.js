@@ -70,8 +70,14 @@ async function startLearningMeaning() {
     
     document.getElementById('challenge-container').style.display = 'block';
     document.getElementById('feedback-container').style.display = 'none';
+    
+    // 重置输入区域状态
     const translationInput = document.getElementById('translation-input');
     translationInput.value = '';
+    translationInput.disabled = false;
+    const submitButton = document.querySelector('#challenge-container button[onclick="submitTranslation()"]');
+    if (submitButton) submitButton.style.display = 'block';
+    
     setTimeout(() => translationInput.focus(), 100); // 延迟聚焦以确保元素可见
 
     const challengeSentenceEl = document.getElementById('challenge-sentence');
@@ -150,7 +156,11 @@ export async function submitTranslation() {
   }
 }`;
 
-    document.getElementById('challenge-container').style.display = 'none';
+    // 禁用输入框并隐藏提交按钮，而不是隐藏整个容器
+    document.getElementById('translation-input').disabled = true;
+    const submitButton = document.querySelector('#challenge-container button[onclick="submitTranslation()"]');
+    if (submitButton) submitButton.style.display = 'none';
+
     const feedbackContainer = document.getElementById('feedback-container');
     const feedbackContentEl = document.getElementById('feedback-content');
     
