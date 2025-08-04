@@ -27,6 +27,20 @@
       ],
       "createdAt": "2025-08-02",
       "updatedAt": "2025-08-02"
+    },
+    {
+      "id": "redbook_u14",
+      "name": "【红宝书】Unit14",
+      "description": "8.4单词任务",
+      "filename": "redbook_u14.csv",
+      "wordCount": 84,
+      "difficulty": "中高级",
+      "tags": [
+        "考研",
+        "红宝书"
+      ],
+      "createdAt": "2025-08-04",
+      "updatedAt": "2025-08-04"
     }
   ]
 }
