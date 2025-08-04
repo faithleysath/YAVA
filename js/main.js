@@ -7,6 +7,7 @@ import { checkVersionUpdate, showChangelogManually } from './version.js';
 import { loadWordlistsIndex, renderWordlistCard } from './wordlist-manager.js';
 import { initWordTranslation } from './word-translation.js';
 import { loadVocabularyBook, removeWordFromVocab, loadVocabAsWordlist } from './vocabulary-book.js';
+import { initShortcuts } from './shortcuts.js';
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -26,6 +27,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 初始化划词翻译功能
     initWordTranslation();
+
+    // 初始化快捷键
+    initShortcuts();
 
     // 初始化生词本
     loadVocabularyBook();

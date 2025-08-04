@@ -41,11 +41,6 @@ export function openSettingsModal() {
     updatePresetButtons(); // This will also set the initial disabled state
     updateApiKeyHint(currentPreset); // 更新API Key提示信息
     settingsModal.style.display = 'flex';
-    
-    // 自动focus到API Key输入框
-    setTimeout(() => {
-        apiKeyInput.focus();
-    }, 100);
 }
 
 export function closeSettingsModal() {
@@ -137,7 +132,6 @@ export function applyPreset(presetName) {
 
         // 加载自定义预设的API Key
         apiKeyInput.value = presetApiKeys[presetName] || '';
-        apiKeyInput.focus();
     } else if (presets[presetName]) {
         baseUrlInput.value = presets[presetName].baseUrl;
         modelNameInput.value = presets[presetName].modelName;
@@ -148,7 +142,6 @@ export function applyPreset(presetName) {
         
         // 加载对应预设的API Key
         apiKeyInput.value = presetApiKeys[presetName] || '';
-        apiKeyInput.focus();
         
         // 更新按钮状态
         updatePresetButtons();
