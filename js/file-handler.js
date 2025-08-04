@@ -55,10 +55,8 @@ function loadProgress(jsonString) {
             appState.allWords = data.allWords;
             appState.masteryState = data.masteryState;
             appState.headers = data.headers;
-            renderWordList();
-            updateUnmasteredCount();
             fileInfo.textContent = `成功导入 ${appState.allWords.length} 个单词的进度！`;
-            document.getElementById('test-controls').classList.remove('hidden');
+            processLoadedData();
         } else {
             showToast('导入的文件格式不正确。', 'error');
         }
