@@ -121,6 +121,22 @@ async function startLearningMeaning() {
     }
 }
 
+export function retryChallenge() {
+    document.getElementById('feedback-container').style.display = 'none';
+    
+    const translationInput = document.getElementById('translation-input');
+    translationInput.disabled = false;
+    
+    const submitButton = document.querySelector('#challenge-container button[onclick="submitTranslation()"]');
+    if (submitButton) submitButton.style.display = 'block';
+    
+    setTimeout(() => {
+        translationInput.focus();
+        // Move cursor to the end of the input
+        translationInput.setSelectionRange(translationInput.value.length, translationInput.value.length);
+    }, 100);
+}
+
 export async function submitTranslation() {
     const userTranslation = document.getElementById('translation-input').value;
     if (!userTranslation.trim()) { showToast('请输入你的翻译！', 'warning'); return; }
@@ -192,7 +208,11 @@ export async function submitTranslation() {
     if (!response || typeof response.score === 'undefined' || !response.evaluation || !response.feedback) {
         showToast('AI 返回数据格式错误，请稍后重试。', 'error');
         feedbackContainer.style.display = 'none';
-        document.getElementById('challenge-container').style.display = 'block';
+        // Re-enable input on error
+        const translationInput = document.getElementById('translation-input');
+        translationInput.disabled = false;
+        if (submitButton) submitButton.style.display = 'block';
+        setTimeout(() => translationInput.focus(), 100);
         return;
     }
 
@@ -224,6 +244,36 @@ export async function submitTranslation() {
 
     document.getElementById('feedback-content').className = `p-4 rounded-lg ${bgColor}`;
     document.getElementById('feedback-content').innerHTML = feedbackHtml;
+
+    const feedbackActionsContainer = document.getElementById('feedback-actions');
+    feedbackActionsContainer.innerHTML = ''; // Clear previous buttons
+
+    let focusedButton = null;
+
+    // Add "Try Again" button if score is not perfect
+    if (response.score < 5) {
+        const retryBtn = document.createElement('button');
+        retryBtn.addEventListener('click', retryChallenge);
+        retryBtn.title = '再试一次';
+        retryBtn.className = 'bg-yellow-500 text-white py-2 px-6 rounded-lg hover:bg-yellow-600 transition-colors font-bold mr-4';
+        retryBtn.textContent = '再试一次';
+        feedbackActionsContainer.appendChild(retryBtn);
+        focusedButton = retryBtn;
+    }
+
+    // Add "Continue" button
+    const continueBtn = document.createElement('button');
+    continueBtn.addEventListener('click', nextStep);
+    continueBtn.title = '继续 (Enter)';
+    continueBtn.className = 'bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-bold';
+    continueBtn.textContent = '继续';
+    feedbackActionsContainer.appendChild(continueBtn);
+
+    if (!focusedButton) {
+        focusedButton = continueBtn;
+    }
+
+    setTimeout(() => focusedButton.focus(), 100);
 }
 
 export function nextStep() {
