@@ -26,12 +26,18 @@ async function loadTestQuestion() {
         switchView('home');
         return;
     }
-    
-    const currentTestItem = appState.testPool[appState.currentTestIndex];
-    const { word, meaning } = currentTestItem;
+
     const answerArea = document.getElementById('test-answer-area');
     answerArea.innerHTML = '';
     let title = '', questionText = '', data;
+
+    if (appState.currentTestMode === 'multi-word-challenge') {
+        const groupSize = Math.min(appState.testPool.length - appState.currentTestIndex, 5);
+        appState.currentTestGroup = appState.testPool.slice(appState.currentTestIndex, appState.currentTestIndex + groupSize);
+    }
+    
+    const currentTestItem = appState.testPool[appState.currentTestIndex];
+    const { word, meaning } = currentTestItem;
 
     const prefetchKey = getTestPrefetchKey(appState.currentTestIndex);
     const cachedData = appState.prefetchCache[prefetchKey];
@@ -51,6 +57,10 @@ async function loadTestQuestion() {
                 break;
             case 'cloze-test':
                 prompt = `你是一位专业的英语出题老师，擅长提供深入、透彻的题目解析。\n\n任务: 请为单词 "${word}" (释义: "${meaning}") 创建一个高质量的完形填空题。\n\n**要求:**\n1.  **句子 (sentence):** 创建一个包含 "_____" 的英文句子，这个句子能有效考察对 "${word}" 的理解。\n2.  **选项 (options):** 提供四个选项，包括正确答案 "${word}" 和三个词性相同但词义明显不符的干扰项。干扰项不应是正确答案的近义词。\n3.  **正确答案 (correctAnswer):** 指明哪个选项是正确答案。\n4.  **解析 (explanations):** 为每一个选项提供详细、有启发性的中文解析。\n    *   **对于正确答案:** 必须详细解释为什么它是最佳选项。解析应包含:\n        1.  该词的核心词义和用法。\n        2.  分析句子语境，说明空格处需要什么性质的词。\n        3.  阐述该词如何与句子中的关键词或逻辑关系完美匹配。\n    *   **对于错误答案:** 必须清晰地解释为什么该选项是错误的。解析应指出具体的错误原因（如：词义不符、感情色彩冲突、逻辑错误、常见搭配错误等），避免使用“与句意相反”或“与语境无关”这类过于笼统的描述。\n\n**输出格式要求:**\n请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。\n\n{\n  "sentence": "As a doctor, she is a strong _____ for preventative healthcare.",\n  "options": ["advocate", "critic", "judge", "opponent"],\n  "correctAnswer": "advocate",\n  "explanations": {\n    "advocate": "正确。'Advocate' 作为名词意为“拥护者，提倡者”。句子语境是“作为一名医生，她对预防性医疗保健...”，空格前有 'strong' (坚定的)，说明需要一个表示支持态度的词。'Advocate' 完美符合语境，表示她是一位“坚定的拥护者”。",\n    "critic": "错误。'Critic' 意为“批评者，评论家”。这与句中“作为一名医生”的身份以及对“预防性医疗”这种积极事物的态度在逻辑上是冲突的。",\n    "judge": "错误。'Judge' 意为“法官，裁判”。虽然也是一种身份，但与医疗领域的语境完全不符，属于词义不匹配。",\n    "opponent": "错误。'Opponent' 意为“反对者，对手”。这与句意完全相反，医生通常会支持而非反对预防性医疗。"\n  }\n}`;
+                break;
+            case 'multi-word-challenge':
+                const wordsToTest = appState.currentTestGroup.map(item => `"${item.word}" (含义: ${item.meaning})`).join(', ');
+                prompt = `你是一位专业的英语出题老师，擅长将多个知识点融合在一个场景中进行考察。\n\n**任务:**\n请根据以下提供的一组单词及其目标释义，创建一个高质量、连贯、自然的英文句子，这个句子必须巧妙地将所有提供的单词都包含在内，并清晰地展示它们各自的目标含义。\n\n**提供的单词列表:**\n${wordsToTest}\n\n**核心要求:**\n1.  **全部包含 (All-Inclusive):** 句子必须包含所有提供的单词。\n2.  **精准释义 (Precision):** 每个单词在句子中的用法必须准确对应其给定的目标释义。\n3.  **自然流畅 (Natural Flow):** 句子必须读起来通顺、地道，不能是生硬的单词堆砌。整个句子应该构成一个有逻辑、有意义的场景。\n4.  **复杂度适中 (Appropriate Complexity):** 句子应具有一定的复杂度，以匹配高级英语学习者的水平，但不能过分晦涩。\n\n**输出格式要求:**\n请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。\n\n{\n  "sentence": "A high-quality, natural-sounding English sentence that incorporates all the given words with their specified meanings."\n}`;
                 break;
         }
         data = await callLLM(prompt, { useGlobalLoader: false });
@@ -78,6 +88,27 @@ async function loadTestQuestion() {
                         <p class="text-sm font-semibold text-slate-500 pt-2">请在下方造出你自己的句子：</p>
                     </div>`;
                 answerArea.innerHTML = `<textarea id="test-answer-input" class="w-full p-3 border border-slate-300 rounded-lg" rows="4" placeholder="在这里输入你的句子..."></textarea><button onclick="submitTestAnswer()" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-lg">提交答案</button>`;
+                setTimeout(() => document.getElementById('test-answer-input')?.focus(), 100);
+            }
+            break;
+        case 'multi-word-challenge':
+            title = '关联造句';
+            if (data.sentence) {
+                const wordsHtml = appState.currentTestGroup.map(item => 
+                    `<div class="p-2 bg-teal-50 rounded-md"><p class="font-bold text-teal-800">${item.word}</p><p class="text-xs text-teal-600">${item.meaning}</p></div>`
+                ).join('');
+                questionText = `
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500 mb-2">请在翻译中体现以下所有单词及释义：</p>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${wordsHtml}</div>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-500 mb-2">情景例句 (由AI生成):</p>
+                            <p class="text-slate-600 text-lg bg-indigo-50 p-4 rounded-lg">"${data.sentence}"</p>
+                        </div>
+                    </div>`;
+                answerArea.innerHTML = `<textarea id="test-answer-input" class="w-full p-3 border border-slate-300 rounded-lg" rows="4" placeholder="请在此输入你的翻译..."></textarea><button onclick="submitTestAnswer()" class="mt-4 bg-green-600 text-white py-2 px-6 rounded-lg">提交答案</button>`;
                 setTimeout(() => document.getElementById('test-answer-input')?.focus(), 100);
             }
             break;
@@ -111,7 +142,7 @@ async function loadTestQuestion() {
         return;
     }
 
-    if (appState.currentTestMode === 'construction') {
+    if (appState.currentTestMode === 'construction' || appState.currentTestMode === 'multi-word-challenge') {
         document.getElementById('test-question').innerHTML = questionText;
     } else {
         document.getElementById('test-question').textContent = questionText.trim();
@@ -136,12 +167,12 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
         if (!userAnswer.trim()) { showToast('请输入答案！', 'warning'); return; }
     }
 
-    const currentTestItem = appState.testPool[appState.currentTestIndex];
-    const { word, meaning } = currentTestItem;
     const question = document.getElementById('test-question').textContent;
     let prompt = '', response = null;
 
     if (appState.currentTestMode === 'cloze-test') {
+        const currentTestItem = appState.testPool[appState.currentTestIndex];
+        const { word, meaning } = currentTestItem;
         const correct = userAnswer === correctAnswer;
         let feedbackHtml = '';
         const userExplanation = appState.currentTestExplanations[userAnswer] || `没有找到对 '${userAnswer}' 的解析。`;
@@ -175,8 +206,15 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
             else if (btn.textContent === userAnswer) btn.classList.add('incorrect');
         });
     } else {
-        prompt = appState.currentTestMode === 'construction'
-            ? `你是一位英语老师。
+        let currentTestItem, word, meaning;
+        if (appState.currentTestMode !== 'multi-word-challenge') {
+            currentTestItem = appState.testPool[appState.currentTestIndex];
+            word = currentTestItem.word;
+            meaning = currentTestItem.meaning;
+        }
+
+        if (appState.currentTestMode === 'construction') {
+            prompt = `你是一位英语老师。
 任务: 评估用户为单词 "${word}" (目标释义: "${meaning}") 造的句子。
 用户的句子: "${userAnswer}"
 
@@ -191,8 +229,9 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
 {
   "correct": true,
   "feedback": "句子语法正确，清晰地表达了目标含义。"
-}`
-            : `你是一位翻译考官。
+}`;
+        } else if (appState.currentTestMode === 'reverse-translation') {
+            prompt = `你是一位翻译考官。
 任务: 评估一个逆向翻译挑战（中译英）。
 - 中文原句: "${question}"
 - 目标单词: "${word}" (应体现 "${meaning}" 的意思)
@@ -211,6 +250,11 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
   "correct": true,
   "feedback": "翻译准确，地道地使用了目标单词。"
 }`;
+        } else if (appState.currentTestMode === 'multi-word-challenge') {
+            const wordsToTest = appState.currentTestGroup.map(item => `"${item.word}" (含义: ${item.meaning})`).join(', ');
+            const originalSentence = document.querySelector('#test-question .text-slate-600').textContent.replace(/"/g, '');
+            prompt = `你是一位顶级的双语翻译专家和语言导师，任务是评估用户将一个包含多个核心单词的复杂英文句子翻译成中文的质量。\n\n**背景信息:**\n- **核心单词列表:** ${wordsToTest}\n- **原始英文例句:** "${originalSentence}"\n- **用户的中文翻译:** "${userAnswer}"\n\n**核心评估原则:**\n1.  **词义精准度 (Precision):** 评估的重中之重。翻译是否精准地传达了**每一个核心单词**在特定语境下的确切含义？\n2.  **完整性 (Completeness):** 翻译是否包含了原文的所有关键信息点，没有遗漏？\n3.  **语言自然度 (Idiomaticity):** 翻译是否符合中文的表达习惯，读起来是否流畅、地道，避免生硬的“翻译腔”。\n\n**评估要求:**\n1.  **评分 (correct):** 如果翻译精准传达了所有核心词义且无重大错误，则为 \`true\`，否则为 \`false\`。\n2.  **反馈 (feedback):** 提供一段简洁、有建设性的中文反馈。如果翻译正确，请予以肯定。如果翻译有误，请具体指出哪个（或哪些）单词的理解有偏差，并提供更优的翻译建议或完整的参考翻译。\n\n**输出格式要求:**\n请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。\n\n{\n  "correct": true,\n  "feedback": "翻译非常出色，精准地表达了所有核心单词的含义，并且语句流畅自然。"\n}`;
+        }
         
         const feedbackContainer = document.getElementById('test-feedback-container');
         const feedbackContentEl = document.getElementById('test-feedback-content');
@@ -238,7 +282,15 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
     let bgColor = '';
     if (response.correct) {
         bgColor = 'bg-green-100 text-green-800';
-        appState.masteryState[word][meaning] = true;
+        if (appState.currentTestMode === 'multi-word-challenge') {
+            appState.currentTestGroup.forEach(item => {
+                appState.masteryState[item.word][item.meaning] = true;
+            });
+        } else {
+            const currentTestItem = appState.testPool[appState.currentTestIndex];
+            const { word, meaning } = currentTestItem;
+            appState.masteryState[word][meaning] = true;
+        }
         renderWordList();
         updateUnmasteredCount();
     } else {
@@ -250,7 +302,11 @@ export async function submitTestAnswer(userAnswer, correctAnswer) {
 }
 
 export function nextTestQuestion() {
-    appState.currentTestIndex++;
+    if (appState.currentTestMode === 'multi-word-challenge') {
+        appState.currentTestIndex += appState.currentTestGroup.length;
+    } else {
+        appState.currentTestIndex++;
+    }
     loadTestQuestion();
 }
 

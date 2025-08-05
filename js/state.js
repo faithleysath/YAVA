@@ -16,6 +16,7 @@ export const appState = {
     testPool: [],
     currentTestIndex: 0,
     currentTestMode: '',
+    currentTestGroup: [],
     currentTestExplanations: null,
     prefetchCache: {},
     isPrefetching: false
