@@ -3,4 +3,4 @@
 export const FREE_MODE_ENABLED = true;
 
 // 其他配置常量可以在这里添加
-export const APP_VERSION = '2.4';
+export const APP_VERSION = '2.5';
