@@ -317,7 +317,9 @@ function getTestPrefetchKey(index) {
 async function prefetchNextTestItem() {
     if (appState.isPrefetching) return;
     
-    const nextIndex = appState.currentTestIndex + 1;
+    const nextIndex = (appState.currentTestMode === 'multi-word-challenge')
+        ? appState.currentTestIndex + appState.currentTestGroup.length
+        : appState.currentTestIndex + 1;
     if (nextIndex >= appState.testPool.length) return;
 
     const prefetchKey = getTestPrefetchKey(nextIndex);
@@ -338,6 +340,13 @@ async function prefetchNextTestItem() {
             break;
         case 'cloze-test':
             prompt = `你是一位专业的英语出题老师，擅长提供深入、透彻的题目解析。\n\n任务: 请为单词 "${word}" (释义: "${meaning}") 创建一个高质量的完形填空题。\n\n**要求:**\n1.  **句子 (sentence):** 创建一个包含 "_____" 的英文句子，这个句子能有效考察对 "${word}" 的理解。\n2.  **选项 (options):** 提供四个选项，包括正确答案 "${word}" 和三个词性相同但词义明显不符的干扰项。干扰项不应是正确答案的近义词。\n3.  **正确答案 (correctAnswer):** 指明哪个选项是正确答案。\n4.  **解析 (explanations):** 为每一个选项提供详细、有启发性的中文解析。\n    *   **对于正确答案:** 必须详细解释为什么它是最佳选项。解析应包含:\n        1.  该词的核心词义和用法。\n        2.  分析句子语境，说明空格处需要什么性质的词。\n        3.  阐述该词如何与句子中的关键词或逻辑关系完美匹配。\n    *   **对于错误答案:** 必须清晰地解释为什么该选项是错误的。解析应指出具体的错误原因（如：词义不符、感情色彩冲突、逻辑错误、常见搭配错误等），避免使用“与句意相反”或“与语境无关”这类过于笼统的描述。\n\n**输出格式要求:**\n请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。\n\n{\n  "sentence": "As a doctor, she is a strong _____ for preventative healthcare.",\n  "options": ["advocate", "critic", "judge", "opponent"],\n  "correctAnswer": "advocate",\n  "explanations": {\n    "advocate": "正确。'Advocate' 作为名词意为“拥护者，提倡者”。句子语境是“作为一名医生，她对预防性医疗保健...”，空格前有 'strong' (坚定的)，说明需要一个表示支持态度的词。'Advocate' 完美符合语境，表示她是一位“坚定的拥护者”。",\n    "critic": "错误。'Critic' 意为“批评者，评论家”。这与句中“作为一名医生”的身份以及对“预防性医疗”这种积极事物的态度在逻辑上是冲突的。",\n    "judge": "错误。'Judge' 意为“法官，裁判”。虽然也是一种身份，但与医疗领域的语境完全不符，属于词义不匹配。",\n    "opponent": "错误。'Opponent' 意为“反对者，对手”。这与句意完全相反，医生通常会支持而非反对预防性医疗。"\n  }\n}`;
+            break;
+        case 'multi-word-challenge':
+            const groupSize = Math.min(appState.testPool.length - nextIndex, 5);
+            if (groupSize <= 0) break;
+            const group = appState.testPool.slice(nextIndex, nextIndex + groupSize);
+            const wordsToTest = group.map(item => `"${item.word}" (含义: ${item.meaning})`).join(', ');
+            prompt = `你是一位专业的英语出题老师，擅长将多个知识点融合在一个场景中进行考察。\n\n**任务:**\n请根据以下提供的一组单词及其目标释义，创建一个高质量、连贯、自然的英文句子，这个句子必须巧妙地将所有提供的单词都包含在内，并清晰地展示它们各自的目标含义。\n\n**提供的单词列表:**\n${wordsToTest}\n\n**核心要求:**\n1.  **全部包含 (All-Inclusive):** 句子必须包含所有提供的单词。\n2.  **精准释义 (Precision):** 每个单词在句子中的用法必须准确对应其给定的目标释义。\n3.  **自然流畅 (Natural Flow):** 句子必须读起来通顺、地道，不能是生硬的单词堆砌。整个句子应该构成一个有逻辑、有意义的场景。\n4.  **复杂度适中 (Appropriate Complexity):** 句子应具有一定的复杂度，以匹配高级英语学习者的水平，但不能过分晦涩。\n\n**输出格式要求:**\n请严格按照以下 JSON 格式返回，不要包含任何额外的解释、注释或 markdown 标记。\n\n{\n  "sentence": "A high-quality, natural-sounding English sentence that incorporates all the given words with their specified meanings."\n}`;
             break;
     }
     
