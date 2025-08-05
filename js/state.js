@@ -16,6 +16,7 @@ export const appState = {
     testPool: [],
     currentTestIndex: 0,
     currentTestMode: '',
+    multiWordChallengeSize: 3,
     currentTestGroup: [],
     currentTestExplanations: null,
     prefetchCache: {},

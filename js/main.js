@@ -15,10 +15,13 @@ const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 const baseUrlInput = document.getElementById('base-url-input');
 const modelNameInput = document.getElementById('model-name-input');
+const multiWordSlider = document.getElementById('multi-word-slider');
+const multiWordSliderValue = document.getElementById('multi-word-slider-value');
 
 // Initial setup
 document.addEventListener('DOMContentLoaded', async () => {
     loadSettings();
+    initializeSlider();
     
     // 检查版本更新
     await checkVersionUpdate();
@@ -51,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     baseUrlInput.addEventListener('input', () => applyPreset('custom'));
     modelNameInput.addEventListener('input', () => applyPreset('custom'));
+    multiWordSlider.addEventListener('input', handleSliderChange);
 
     window.addEventListener('beforeunload', (event) => {
         if (appState.allWords.length > 0) {
@@ -84,6 +88,23 @@ async function initializeWordlists() {
             </div>
         `;
     }
+}
+
+// Initialize and handle the multi-word challenge slider
+function initializeSlider() {
+    const savedSize = localStorage.getItem('multiWordChallengeSize');
+    if (savedSize) {
+        appState.multiWordChallengeSize = parseInt(savedSize, 10);
+    }
+    multiWordSlider.value = appState.multiWordChallengeSize;
+    multiWordSliderValue.textContent = appState.multiWordChallengeSize;
+}
+
+function handleSliderChange(event) {
+    const value = event.target.value;
+    appState.multiWordChallengeSize = parseInt(value, 10);
+    multiWordSliderValue.textContent = value;
+    localStorage.setItem('multiWordChallengeSize', value);
 }
 
 // Expose functions to global scope for inline event handlers
